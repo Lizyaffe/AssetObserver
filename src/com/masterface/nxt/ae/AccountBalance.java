@@ -3,9 +3,6 @@ package com.masterface.nxt.ae;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
-* Created by lyaf on 6/6/2014.
-*/
 class AccountBalance implements Comparable<AccountBalance> {
     private final String accountId;
     private long quantityQNT;
@@ -27,7 +24,7 @@ class AccountBalance implements Comparable<AccountBalance> {
     public void send(Transfer transfer) {
         quantityQNT -= transfer.getQuantityQNT();
         if (transfer instanceof Trade) {
-            outgoingTrade.add((Trade)transfer);
+            outgoingTrade.add((Trade) transfer);
         } else {
             outgoingTransfer.add(transfer);
         }
@@ -36,7 +33,7 @@ class AccountBalance implements Comparable<AccountBalance> {
     public void receive(Transfer transfer) {
         quantityQNT += transfer.getQuantityQNT();
         if (transfer instanceof Trade) {
-            incomingTrade.add((Trade)transfer);
+            incomingTrade.add((Trade) transfer);
         } else {
             incomingTransfer.add(transfer);
         }

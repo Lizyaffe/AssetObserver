@@ -1,8 +1,5 @@
 package com.masterface.nxt.ae;
 
-/**
-* Created by lyaf on 6/6/2014.
-*/
 class Transfer implements Comparable<Transfer> {
     private final String assetId;
     private final Long timestamp;

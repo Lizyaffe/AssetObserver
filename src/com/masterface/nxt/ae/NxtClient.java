@@ -1,67 +1,63 @@
 package com.masterface.nxt.ae;
 
-import nxt.util.CountingInputStream;
-import nxt.util.CountingOutputStream;
-import nxt.util.JSON;
-import nxt.util.Logger;
 import org.json.simple.JSONObject;
-import org.json.simple.JSONStreamAware;
 import org.json.simple.JSONValue;
 
-import java.io.*;
-import java.net.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.Map;
 
-public class NxtClient {
+public class NxtClient implements JsonProvider {
 
-    static JSONObject getJsonResponse(Map<String, String> params) {
-        JSONStreamAware request = JSON.prepareRequest(new JSONObject());
+    @Override
+    public JSONObject getJsonResponse(Map<String, String> params) {
+        return getJsonResponse(params, true);
+    }
+
+    JSONObject getJsonResponse(Map<String, String> params, boolean isLogRequests) {
         JSONObject response;
         HttpURLConnection connection = null;
+        String urlParams = Utils.getUrlParams(params);
         try {
-            String urlParams = getUrlParams(params);
-            URL url = new URL("http://" + AssetObserver.ADDRESS + "/nxt?" + urlParams);
-            connection = (HttpURLConnection)url.openConnection();
+            String spec = "http://" + AssetObserver.ADDRESS + "/nxt?" + urlParams;
+            URL url = new URL(spec);
+            connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("POST");
             connection.setDoOutput(true);
-
-            CountingOutputStream cos = new CountingOutputStream(connection.getOutputStream());
-            try (Writer writer = new BufferedWriter(new OutputStreamWriter(cos, "UTF-8"))) {
-                request.writeJSONString(writer);
-            }
-
             if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
-                CountingInputStream cis = new CountingInputStream(connection.getInputStream());
-                try (Reader reader = new BufferedReader(new InputStreamReader(cis, "UTF-8"))) {
+                try (Reader reader = new BufferedReader(new InputStreamReader(connection.getInputStream(), "UTF-8"))) {
                     response = (JSONObject) JSONValue.parse(reader);
                 }
             } else {
                 response = null;
             }
-        } catch (RuntimeException|IOException e) {
-            if (! (e instanceof UnknownHostException || e instanceof SocketTimeoutException || e instanceof SocketException)) {
-                Logger.logDebugMessage("Error sending JSON request", e);
+        } catch (RuntimeException | IOException e) {
+            e.printStackTrace();
+            if (connection != null) {
+                connection.disconnect();
             }
-            response = null;
+            throw new IllegalStateException(e);
         }
-        if (connection != null) {
-            connection.disconnect();
+        if (isLogRequests && response != null) {
+            ArrayList<String> lines = new ArrayList<>();
+            lines.add(urlParams);
+            lines.add(response.toJSONString());
+            try {
+                Files.write(Paths.get(JSON_RESPONSE_JOURNAL_LOG), lines, Charset.forName("UTF-8"), StandardOpenOption.APPEND);
+            } catch (IOException e) {
+                throw new IllegalStateException(e);
+            }
         }
         return response;
     }
 
-    private static String getUrlParams(Map<String, String> params) {
-        if (params == null) {
-            return "";
-        }
-        StringBuilder sb = new StringBuilder();
-        for (String key : params.keySet()) {
-            sb.append(key).append("=").append(params.get(key)).append("&");
-        }
-        String rc = sb.toString();
-        if (rc.endsWith("&")) {
-            rc = rc.substring(0, rc.length() - 1);
-        }
-        return rc;
-    }
 }

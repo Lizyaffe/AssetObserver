@@ -3,11 +3,9 @@ package com.masterface.nxt.ae;
 import org.json.simple.JSONObject;
 
 import java.util.*;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 
-/**
-* Created by lyaf on 6/6/2014.
-*/
 class Asset {
     private final String assetId;
     private final String accountId;
@@ -22,13 +20,13 @@ class Asset {
     private double lastPrice;
 
     Asset(JSONObject assetJson) {
-        this.assetId = (String)assetJson.get("asset");
-        this.accountId = (String)assetJson.get("account");
-        this.name = (String)assetJson.get("name");
-        this.description = (String)assetJson.get("description");
-        this.quantityQNT = Long.parseLong(((String)assetJson.get("quantityQNT")));
-        this.decimals = (Long)assetJson.get("decimals");
-        this.numberOfTrades = (Long)assetJson.get("numberOfTrades");
+        this.assetId = (String) assetJson.get("asset");
+        this.accountId = (String) assetJson.get("account");
+        this.name = (String) assetJson.get("name");
+        this.description = (String) assetJson.get("description");
+        this.quantityQNT = Long.parseLong(((String) assetJson.get("quantityQNT")));
+        this.decimals = (Long) assetJson.get("decimals");
+        this.numberOfTrades = (Long) assetJson.get("numberOfTrades");
         this.transfers = new ArrayList<>();
         this.accountBalancesMap = new HashMap<>();
         this.accountBalancesList = new ArrayList<>();
@@ -78,7 +76,7 @@ class Asset {
     }
 
     public long getAssetValue() {
-        return (long)(getLastPrice() * quantityQNT);
+        return (long) (getLastPrice() * quantityQNT);
     }
 
     public void calcAccountQty() {
@@ -124,25 +122,29 @@ class Asset {
         if (accountQNT != quantityQNT) {
             throw new IllegalStateException("" + name);
         }
-        System.out.println(name + " issuer " + accountId + " balance:" + getQNTPercent(accountBalancesMap.get(accountId).getQuantityQNT()));
+        if (AssetObserver.log.isLoggable(Level.INFO)) {
+            AssetObserver.log.info(name + " issuer " + accountId + " balance:" + getQNTPercent(accountBalancesMap.get(accountId).getQuantityQNT()));
+        }
         for (AccountBalance balance : accountBalancesList) {
             if (balance.getQuantityQNT() == 0) {
                 break;
             }
-            System.out.printf("Account %s quantity %d (%d%%) value %f nxt balance %d transfer quantity %d\n",
-                    balance.getAccountId(), balance.getQuantityQNT(), getQNTPercent(balance.getQuantityQNT()),
-                    balance.getQuantityQNT() * lastPrice / AssetObserver.NQT_IN_NXT, balance.getNxtBalance(), balance.getTransferBalance());
+            if (AssetObserver.log.isLoggable(Level.INFO)) {
+                AssetObserver.log.info(String.format("Account %s quantity %d (%d%%) value %f nxt balance %d transfer quantity %d\n",
+                        balance.getAccountId(), balance.getQuantityQNT(), getQNTPercent(balance.getQuantityQNT()),
+                        balance.getQuantityQNT() * lastPrice / AssetObserver.NQT_IN_NXT, balance.getNxtBalance(), balance.getTransferBalance()));
+            }
         }
     }
 
     private long getQNTPercent(long qnt) {
-        return (long)((double)qnt / quantityQNT * 100);
+        return (long) ((double) qnt / quantityQNT * 100);
     }
 
     public void setLastPrice() {
-        for (int i=transfers.size()-1; i>-0; i--) {
+        for (int i = transfers.size() - 1; i > -0; i--) {
             if (transfers.get(i) instanceof Trade) {
-                lastPrice = ((Trade)transfers.get(i)).getPriceNQT();
+                lastPrice = ((Trade) transfers.get(i)).getPriceNQT();
                 break;
             }
         }
