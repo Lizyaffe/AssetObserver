@@ -9,6 +9,8 @@ import java.util.stream.Collectors;
 class Asset {
     private final String assetId;
     private final String accountId;
+    @SuppressWarnings({"FieldCanBeLocal", "UnusedDeclaration"})
+    private final String accountIdRs;
     private final String name;
     private final String description;
     private final long quantityQNT;
@@ -22,6 +24,7 @@ class Asset {
     Asset(JSONObject assetJson) {
         this.assetId = (String) assetJson.get("asset");
         this.accountId = (String) assetJson.get("account");
+        this.accountIdRs = (String) assetJson.get("accountRS");
         this.name = (String) assetJson.get("name");
         this.description = (String) assetJson.get("description");
         this.quantityQNT = Long.parseLong(((String) assetJson.get("quantityQNT")));
@@ -84,7 +87,7 @@ class Asset {
     }
 
     public void calcAccountQty(Asset asset) {
-        accountBalancesMap.put(accountId, new AccountBalance(accountId, asset, quantityQNT));
+        accountBalancesMap.put(accountId, new AccountBalance(accountId, asset, quantityQNT, true));
         for (Transfer transfer : transfers) {
             String senderId = transfer.getSenderAccount();
             AccountBalance sender = accountBalancesMap.get(senderId);
@@ -93,7 +96,7 @@ class Asset {
             String recipientId = transfer.getRecipientAccount();
             AccountBalance recipient = accountBalancesMap.get(recipientId);
             if (recipient == null) {
-                recipient = new AccountBalance(recipientId, asset, 0);
+                recipient = new AccountBalance(recipientId, asset, 0, false);
                 accountBalancesMap.put(recipientId, recipient);
             }
             recipient.receive(transfer);
@@ -133,7 +136,7 @@ class Asset {
             if (balance.getQuantity() == 0) {
                 break;
             }
-            if (AssetObserver.log.isLoggable(Level.INFO)) {
+            if (AssetObserver.log.isLoggable(Level.FINE)) {
                 AssetObserver.log.info(String.format("Account %s quantity %.2f (%.2f%%) value %.2f fifo price %.2f%n",
                         balance.getAccountId(), balance.getQuantity(), getQNTPercent(balance.getQuantity()),
                         balance.getQuantity() * lastPrice / AssetObserver.NQT_IN_NXT, balance.getFifoPrice()));
@@ -156,5 +159,40 @@ class Asset {
 
     public AccountBalance getIssuerAccount() {
         return accountBalancesMap.get(accountId);
+    }
+
+    public double getTradedValue() {
+        return (getQuantity() - getIssuerAccount().getQuantity()) * getLastPrice();
+    }
+
+    public List<AccountBalance> getAccountBalancesList() {
+        return accountBalancesList;
+    }
+
+    @SuppressWarnings("UnusedDeclaration")
+    public List<DividendPayment> payDividend(long dividendAmount, Date date, boolean shouldPayIssuer, long threshold) {
+        int timeStamp = Utils.getTimeStamp(date);
+        double totalQuantity = 0;
+        for (AccountBalance balance : accountBalancesList) {
+            if (!shouldPayIssuer && balance.getAccountId().equals(balance.getAsset().getIssuerAccount().getAccountId())) {
+                continue;
+            }
+            totalQuantity += balance.getQuantity(timeStamp);
+        }
+        List<DividendPayment> payments = new ArrayList<>();
+        int carey = 0;
+        for (AccountBalance balance : accountBalancesList) {
+            if (!shouldPayIssuer && balance.getAccountId().equals(balance.getAsset().getIssuerAccount().getAccountId())) {
+                continue;
+            }
+            double payment = balance.getQuantity() / totalQuantity * dividendAmount;
+            if (payment >= threshold) {
+                payments.add(new DividendPayment(balance.getAccountId(), payment));
+            } else {
+                carey += payment;
+            }
+        }
+        // recursively pay dividend for the carey amount
+        return payments;
     }
 }

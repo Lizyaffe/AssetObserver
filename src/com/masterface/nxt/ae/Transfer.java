@@ -50,6 +50,10 @@ class Transfer implements Comparable<Transfer> {
         this.recipientAccount = recipientAccount;
     }
 
+    public boolean isTrade() {
+        return false;
+    }
+
     @Override
     public int compareTo(@SuppressWarnings("NullableProblems") Transfer t) {
         if (getTimestamp() < t.getTimestamp()) {

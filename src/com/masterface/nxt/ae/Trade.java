@@ -28,6 +28,11 @@ class Trade extends Transfer {
     }
 
     @Override
+    public boolean isTrade() {
+        return true;
+    }
+
+    @Override
     public String toString() {
         return super.toString() + "Trade{" +
                 "priceNQT=" + priceNQT +

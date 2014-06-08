@@ -22,7 +22,11 @@ public class TestAssetObserver {
     public void init() {
         assetObserver = new AssetObserver();
 
-        JsonProvider jsonProvider = JsonProviderFactory.getJsonProvider(testName.getMethodName());
+        String methodName = testName.getMethodName();
+        if (methodName.equals("getNemTopHolders")) {
+            methodName = "getNemValue";
+        }
+        JsonProvider jsonProvider = JsonProviderFactory.getJsonProvider(methodName);
         assets = assetObserver.load(jsonProvider);
     }
 
@@ -35,6 +39,8 @@ public class TestAssetObserver {
         AccountBalance nsc = balances.get(9);
         Assert.assertEquals(10, nsc.getQuantity(), DELTA);
         Assert.assertEquals(8, nsc.getFifoPrice(), DELTA);
+        Assert.assertEquals(2, nsc.getFees());
+        Assert.assertEquals(false, nsc.isIssuer());
     }
 
     @Test
@@ -45,10 +51,12 @@ public class TestAssetObserver {
         Assert.assertEquals(0.1, nemStake.getQuantity(), DELTA);
         Assert.assertEquals(21200, nemStake.getAsset().getLastPrice(), DELTA);
         Assert.assertEquals(19177.78, nemStake.getFifoPrice(), 0.01);
+        Assert.assertEquals(5, nemStake.getFees());
+        Assert.assertEquals(false, nemStake.isIssuer());
     }
 
     @Test
-    public void getAssetValue() {
+    public void getNemValue() {
         Asset nemStake = assets.get("12465186738101000735");
         AccountBalance issuerAccount = nemStake.getIssuerAccount();
         double totalQuantity = nemStake.getQuantity();
@@ -60,6 +68,24 @@ public class TestAssetObserver {
         double tradedValue = tradedQuantity * nemStake.getLastPrice();
         Assert.assertEquals(7760000.0, tradedValue, 0.1);
 
+    }
+
+    @Test
+    public void getNemTopHolders() {
+        Asset nemStake = assets.get("12465186738101000735");
+        AccountBalance issuerAccount = nemStake.getIssuerAccount();
+        Assert.assertEquals(612.0, issuerAccount.getQuantity(), 0.1);
+        Assert.assertEquals(1388, issuerAccount.getFees());
+        List<AccountBalance> accountBalancesList = nemStake.getAccountBalancesList();
+        Assert.assertEquals(issuerAccount, accountBalancesList.get(0));
+        AccountBalance account1 = accountBalancesList.get(1);
+        Assert.assertEquals(12.0, account1.getQuantity(), 0.1);
+        Assert.assertEquals(21904.17, account1.getFifoPrice(), 0.01);
+        Assert.assertEquals("41855536211966686", account1.getAccountId());
+        AccountBalance account2 = accountBalancesList.get(2);
+        Assert.assertEquals(11.2, account2.getQuantity(), 0.1);
+        Assert.assertEquals(17803.92, account2.getFifoPrice(), 0.01);
+        Assert.assertEquals("12405492669314277647", account2.getAccountId());
     }
 
 }

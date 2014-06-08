@@ -41,10 +41,9 @@ public class AssetObserver {
         double totalQuantity = nemStake.getQuantity();
         double totalValue = totalQuantity * nemStake.getLastPrice();
         double tradedQuantity = totalQuantity - issuerAccount.getQuantity();
-        double tradedValue = tradedQuantity * nemStake.getLastPrice();
         if (log.isLoggable(Level.INFO)) {
             log.info(String.format("Asset %s totalQuantity %f totalValue %f tradedQuantity %f tradedValue %f",
-                    nemStake, totalQuantity, totalValue, tradedQuantity, tradedValue));
+                    nemStake, totalQuantity, totalValue, tradedQuantity, nemStake.getTradedValue()));
         }
     }
 
@@ -100,7 +99,7 @@ public class AssetObserver {
             asset.setLastPrice();
             asset.calcAccountQty(asset);
 
-            if (log.isLoggable(Level.INFO)) {
+            if (log.isLoggable(Level.FINE)) {
                 log.info(String.format("Asset %s quantity %.2f price %f value %d\n",
                         asset.getName(), asset.getQuantity(), asset.getLastPrice(), asset.getAssetValue()));
             }
@@ -118,9 +117,10 @@ public class AssetObserver {
             }
             if (accountBalance.getQuantity() != 0) {
                 double quantityQNT = accountBalance.getQuantity();
-                double currentValue = quantityQNT * asset.getLastPrice();
+                double currentValue = accountBalance.getValue();
+                // double currentValue = quantityQNT * asset.getLastPrice();
                 double avcoPrice = accountBalance.getFifoPrice();
-                if (AssetObserver.log.isLoggable(Level.INFO)) {
+                if (AssetObserver.log.isLoggable(Level.FINE)) {
                     AssetObserver.log.info(String.format("Asset %s Account %s quantity %.2f current price %.2f value %.2f AVCO price %.2f change %.2f%% " +
                                     "average cost %d profit %d%n",
                             asset.getName(), accountId, quantityQNT, asset.getLastPrice(), currentValue, avcoPrice,
