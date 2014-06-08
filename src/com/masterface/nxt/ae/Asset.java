@@ -51,8 +51,12 @@ class Asset {
         return description;
     }
 
-    public long getQuantityQNT() {
-        return quantityQNT;
+    public long getDecimals() {
+        return decimals;
+    }
+
+    public double getQuantity() {
+        return quantityQNT / (double)AssetObserver.MULTIPLIERS[(int)getDecimals()];
     }
 
     public long getNumberOfTrades() {
@@ -64,7 +68,7 @@ class Asset {
     }
 
     public double getLastPrice() {
-        return lastPrice / AssetObserver.NQT_IN_NXT;
+        return lastPrice / AssetObserver.NQT_IN_NXT * AssetObserver.MULTIPLIERS[((int) getDecimals())];
     }
 
     public void addTransfer(Transfer transfer) {
@@ -79,8 +83,8 @@ class Asset {
         return (long) (getLastPrice() * quantityQNT);
     }
 
-    public void calcAccountQty() {
-        accountBalancesMap.put(accountId, new AccountBalance(accountId, quantityQNT));
+    public void calcAccountQty(Asset asset) {
+        accountBalancesMap.put(accountId, new AccountBalance(accountId, asset, quantityQNT));
         for (Transfer transfer : transfers) {
             String senderId = transfer.getSenderAccount();
             AccountBalance sender = accountBalancesMap.get(senderId);
@@ -89,7 +93,7 @@ class Asset {
             String recipientId = transfer.getRecipientAccount();
             AccountBalance recipient = accountBalancesMap.get(recipientId);
             if (recipient == null) {
-                recipient = new AccountBalance(recipientId, 0);
+                recipient = new AccountBalance(recipientId, asset, 0);
                 accountBalancesMap.put(recipientId, recipient);
             }
             recipient.receive(transfer);
@@ -115,38 +119,42 @@ class Asset {
     }
 
     public void analyzeAccountBalances() {
-        long accountQNT = 0;
+        double accountQNT = 0;
         for (AccountBalance balance : accountBalancesMap.values()) {
-            accountQNT += balance.getQuantityQNT();
+            accountQNT += balance.getQuantity();
         }
-        if (accountQNT != quantityQNT) {
+        if (Math.abs(accountQNT - getQuantity()) < (1 / AssetObserver.MULTIPLIERS[7])) {
             throw new IllegalStateException("" + name);
         }
-        if (AssetObserver.log.isLoggable(Level.INFO)) {
-            AssetObserver.log.info(name + " issuer " + accountId + " balance:" + getQNTPercent(accountBalancesMap.get(accountId).getQuantityQNT()));
+        if (AssetObserver.log.isLoggable(Level.FINE)) {
+            AssetObserver.log.info(name + " issuer " + accountId + " balance " + getQNTPercent(getIssuerAccount().getQuantity()));
         }
         for (AccountBalance balance : accountBalancesList) {
-            if (balance.getQuantityQNT() == 0) {
+            if (balance.getQuantity() == 0) {
                 break;
             }
             if (AssetObserver.log.isLoggable(Level.INFO)) {
-                AssetObserver.log.info(String.format("Account %s quantity %d (%d%%) value %f nxt balance %d transfer quantity %d\n",
-                        balance.getAccountId(), balance.getQuantityQNT(), getQNTPercent(balance.getQuantityQNT()),
-                        balance.getQuantityQNT() * lastPrice / AssetObserver.NQT_IN_NXT, balance.getNxtBalance(), balance.getTransferBalance()));
+                AssetObserver.log.info(String.format("Account %s quantity %.2f (%.2f%%) value %.2f fifo price %.2f%n",
+                        balance.getAccountId(), balance.getQuantity(), getQNTPercent(balance.getQuantity()),
+                        balance.getQuantity() * lastPrice / AssetObserver.NQT_IN_NXT, balance.getFifoPrice()));
             }
         }
     }
 
-    private long getQNTPercent(long qnt) {
-        return (long) ((double) qnt / quantityQNT * 100);
+    private double getQNTPercent(double qnt) {
+        return qnt / quantityQNT * 100;
     }
 
     public void setLastPrice() {
         for (int i = transfers.size() - 1; i > -0; i--) {
             if (transfers.get(i) instanceof Trade) {
-                lastPrice = ((Trade) transfers.get(i)).getPriceNQT();
+                lastPrice = ((Trade)transfers.get(i)).getPriceNQT();
                 break;
             }
         }
+    }
+
+    public AccountBalance getIssuerAccount() {
+        return accountBalancesMap.get(accountId);
     }
 }

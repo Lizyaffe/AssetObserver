@@ -52,7 +52,7 @@ public class NxtClient implements JsonProvider {
             lines.add(urlParams);
             lines.add(response.toJSONString());
             try {
-                Files.write(Paths.get(JSON_RESPONSE_JOURNAL_LOG), lines, Charset.forName("UTF-8"), StandardOpenOption.APPEND);
+                Files.write(Paths.get(JSON_RESPONSE_JOURNAL + ".log"), lines, Charset.forName("UTF-8"), StandardOpenOption.APPEND);
             } catch (IOException e) {
                 throw new IllegalStateException(e);
             }

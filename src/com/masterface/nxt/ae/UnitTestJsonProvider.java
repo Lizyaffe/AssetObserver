@@ -12,20 +12,30 @@ import java.util.Map;
 
 public class UnitTestJsonProvider implements JsonProvider {
 
+    private final String testResource;
     private Iterator<String> iterator;
+
+    public UnitTestJsonProvider(String testResource) {
+        this.testResource = testResource;
+    }
 
     @Override
     public JSONObject getJsonResponse(Map<String, String> params) {
         if (iterator == null) {
             try {
-                iterator = Files.readAllLines(Paths.get("test.resources/JsonResponseJournal.log")).iterator();
+                iterator = Files.readAllLines(Paths.get("test.resources/" + JSON_RESPONSE_JOURNAL + "." + testResource + ".log")).iterator();
             } catch (IOException e) {
                 throw new IllegalStateException(e);
             }
         }
-        if (!Utils.getUrlParams(params).equals(iterator.next())) {
-            throw new IllegalStateException();
+        String urlParams = Utils.getUrlParams(params);
+        if (!iterator.hasNext()) {
+            throw new IllegalStateException(String.format("No match for request %s", urlParams));
         }
-        return (JSONObject) JSONValue.parse(iterator.next());
+        String expectedUrlParams = iterator.next();
+        if (!urlParams.equals(expectedUrlParams)) {
+            throw new IllegalStateException(String.format("Unexpected request %s was expecting %s", urlParams, expectedUrlParams));
+        }
+        return (JSONObject)JSONValue.parse(iterator.next());
     }
 }

@@ -47,7 +47,7 @@ public class NxtApi {
             assetMap.put(asset.getId(), asset);
         }
         for (Asset asset : assetMap.values()) {
-            if (AssetObserver.log.isLoggable(Level.INFO)) {
+            if (AssetObserver.log.isLoggable(Level.FINE)) {
                 AssetObserver.log.info(asset.toString());
             }
         }
@@ -89,7 +89,7 @@ public class NxtApi {
                 Transfer transfer = new Transfer((String) attachment.get("asset"), (Long) transaction.get("timestamp"),
                         Long.parseLong((String) attachment.get("quantityQNT")), blockId,
                         (String) transaction.get("sender"), (String) transaction.get("recipient"));
-                if (AssetObserver.log.isLoggable(Level.INFO)) {
+                if (AssetObserver.log.isLoggable(Level.FINE)) {
                     AssetObserver.log.info("Transfer:" + transfer);
                 }
                 assetTransfers.add(transfer);
