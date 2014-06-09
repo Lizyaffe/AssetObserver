@@ -6,16 +6,17 @@ import org.json.simple.JSONValue;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
 
-public class UnitTestJsonProvider implements JsonProvider {
+public class LocalFileJsonProvider implements JsonProvider {
 
-    private final String testResource;
+    private final Path testResource;
     private Iterator<String> iterator;
 
-    public UnitTestJsonProvider(String testResource) {
+    public LocalFileJsonProvider(Path testResource) {
         this.testResource = testResource;
     }
 
@@ -23,7 +24,7 @@ public class UnitTestJsonProvider implements JsonProvider {
     public JSONObject getJsonResponse(Map<String, String> params) {
         if (iterator == null) {
             try {
-                iterator = Files.readAllLines(Paths.get("test.resources/" + JSON_RESPONSE_JOURNAL + "." + testResource + ".log")).iterator();
+                iterator = Files.readAllLines(testResource).iterator();
             } catch (IOException e) {
                 throw new IllegalStateException(e);
             }
@@ -37,5 +38,10 @@ public class UnitTestJsonProvider implements JsonProvider {
             throw new IllegalStateException(String.format("Unexpected request %s was expecting %s", urlParams, expectedUrlParams));
         }
         return (JSONObject)JSONValue.parse(iterator.next());
+    }
+
+    @Override
+    public ArrayList<String> getLines() {
+        return null;
     }
 }

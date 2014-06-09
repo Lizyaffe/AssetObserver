@@ -3,9 +3,13 @@ package com.masterface.nxt.ae;
 import org.json.simple.JSONObject;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -20,49 +24,55 @@ public class AssetObserver {
     public static final int COLORED_COINS_ASK = 2;
     public static final int COLORED_COINS_BID = 3;
     public static final long[] MULTIPLIERS = {1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000};
+
     public static Logger log;
+
     public static BterApi bterApi;
     public static double nxtBtcPrice;
-    public static double nxtCnyPrice;
     public static double nxtUsdPrice;
+    public static double nxtCnyPrice;
 
-    public static void main(String[] args) {
-        AssetObserver assetObserver = new AssetObserver();
-        JsonProvider jsonProvider = JsonProviderFactory.getJsonProvider(null);
-        try {
-            String logFile = NxtClient.JSON_RESPONSE_JOURNAL + ".log";
-            Files.deleteIfExists(Paths.get(logFile));
-            Files.createFile(Paths.get(logFile));
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
-        }
-        Map<String, Asset> assets = assetObserver.load(jsonProvider);
-        assetObserver.getMyBalance(assets, "13196039393619977660");
-        assetObserver.getMyBalance(assets, "9747151086038883973");
-        assetObserver.getMyBalance(assets, "3041433146235555849");
-        for (Asset asset : assets.values()) {
-            if (asset.getNumberOfTrades() == 0) {
-                continue;
-            }
-            AccountBalance issuerAccount = asset.getIssuerAccount();
-            if (log.isLoggable(Level.INFO)) {
-                log.info(String.format("Asset %s totalQuantity %f totalValue %f distributedQuantity %f distributedValue %f trades %d transfers %d",
-                        asset,
-                        asset.getQuantity(),
-                        asset.getQuantity() * asset.getLastPrice(),
-                        asset.getQuantity() - issuerAccount.getQuantity(),
-                        asset.getTradedValue(),
-                        asset.getNumberOfTrades(),
-                        asset.getNumberOfTransfers()));
-            }
-        }
-    }
+    private Map<String, Asset> assets;
 
-    private static void init() {
+    static {
         log = Logger.getGlobal();
         log.setLevel(Level.INFO);
         log.fine("AssetObserver started");
+        if (log.isLoggable(Level.INFO)) {
+            log.info("Loading started");
+        }
+    }
 
+    public static void main(String[] args) {
+//        JsonProvider jsonProvider = JsonProviderFactory.getJsonProvider(null);
+        log = Logger.getGlobal();
+        log.setLevel(Level.INFO);
+        log.fine("AssetObserver started");
+        if (log.isLoggable(Level.INFO)) {
+            log.info("Loading started");
+        }
+        readExchangeRates();
+        AssetObserver assetObserver = new AssetObserver();
+        assetObserver.loadCache();
+//        Runnable r = () -> assetObserver.load(jsonProvider);
+//        ExecutorService executorService = Executors.newSingleThreadExecutor();
+//        executorService.execute(r);
+        new ServerWrapper().start(assetObserver);
+    }
+
+    private void loadCache() {
+        if (log.isLoggable(Level.INFO)) {
+            log.info("Loading data from cache");
+        }
+        Path testResource = Paths.get("cache.log");
+        JsonProvider jsonProvider = JsonProviderFactory.getJsonProvider(testResource);
+        assets = load(jsonProvider);
+        if (log.isLoggable(Level.INFO)) {
+            log.info("Loading from cache done");
+        }
+    }
+
+    private static void readExchangeRates() {
         BterClient bterClient = new BterClient();
         bterApi = new BterApi(bterClient);
         nxtBtcPrice = bterApi.getLastPrice("NXT", "BTC");
@@ -74,9 +84,8 @@ public class AssetObserver {
     }
 
     public Map<String, Asset> load(JsonProvider jsonProvider) {
-        init();
         NxtApi nxtAPi = new NxtApi(jsonProvider);
-        Map<String, Asset> assets = nxtAPi.getAllAssets();
+        assets = nxtAPi.getAllAssets();
         List<Trade> trades = nxtAPi.getAllTrades();
         for (Trade trade : trades) {
             JSONObject bidTransaction = nxtAPi.getTransaction(trade.getBidOrderId());
@@ -131,7 +140,39 @@ public class AssetObserver {
         if (log.isLoggable(Level.INFO)) {
             log.info("Account analysis done");
         }
+        try {
+            ArrayList<String> lines = nxtAPi.getLines();
+            if (lines != null) {
+                Path path = Paths.get("cache.log");
+                Files.write(path, lines, Charset.forName("UTF-8"), StandardOpenOption.WRITE);
+            }
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
         return assets;
+    }
+
+    @SuppressWarnings("UnusedDeclaration")
+    private void test(Map<String, Asset> assets) {
+        getMyBalance(assets, "13196039393619977660");
+        getMyBalance(assets, "9747151086038883973");
+        getMyBalance(assets, "3041433146235555849");
+        for (Asset asset : assets.values()) {
+            if (asset.getNumberOfTrades() == 0) {
+                continue;
+            }
+            AccountBalance issuerAccount = asset.getIssuerAccount();
+            if (log.isLoggable(Level.INFO)) {
+                log.info(String.format("Asset %s totalQuantity %f totalValue %f distributedQuantity %f distributedValue %f trades %d transfers %d",
+                        asset,
+                        asset.getQuantity(),
+                        asset.getQuantity() * asset.getLastPrice(),
+                        asset.getQuantity() - issuerAccount.getQuantity(),
+                        asset.getTradedValue(),
+                        asset.getNumberOfTrades(),
+                        asset.getNumberOfTransfers()));
+            }
+        }
     }
 
     List<AccountBalance> getMyBalance(Map<String, Asset> assets, String accountId) {
@@ -158,5 +199,9 @@ public class AssetObserver {
             }
         }
         return balances;
+    }
+
+    public Collection<Asset> getAllAssets() {
+        return assets.values();
     }
 }

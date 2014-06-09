@@ -6,6 +6,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 
@@ -14,6 +16,7 @@ public class TestAssetObserver {
     AssetObserver assetObserver;
     Map<String, Asset> assets;
     private static double DELTA = 0.00000001;
+    public static final String JSON_RESPONSE_JOURNAL = "JsonResponseJournal";
 
     @Rule
     public TestName testName = new TestName();
@@ -26,7 +29,8 @@ public class TestAssetObserver {
         if (methodName.equals("getNemTopHolders")) {
             methodName = "getNemValue";
         }
-        JsonProvider jsonProvider = JsonProviderFactory.getJsonProvider(methodName);
+        Path testResource = Paths.get("test.resources/" + JSON_RESPONSE_JOURNAL + "." + methodName + ".log");
+        JsonProvider jsonProvider = JsonProviderFactory.getJsonProvider(testResource);
         assets = assetObserver.load(jsonProvider);
     }
 

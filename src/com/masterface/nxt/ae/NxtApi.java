@@ -105,4 +105,8 @@ public class NxtApi {
         JSONObject response = jsonProvider.getJsonResponse(params);
         return (String) response.get("lastBlock");
     }
+
+    public ArrayList<String> getLines() {
+        return jsonProvider.getLines();
+    }
 }

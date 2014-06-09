@@ -83,7 +83,7 @@ class Asset {
     }
 
     public long getAssetValue() {
-        return (long) (getLastPrice() * quantityQNT);
+        return (long) (getLastPrice() * getQuantity());
     }
 
     public void calcAccountQty(Asset asset) {
@@ -194,5 +194,35 @@ class Asset {
         }
         // recursively pay dividend for the carey amount
         return payments;
+    }
+
+    public JSONObject toJsonObject() {
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("id", assetId);
+        jsonObject.put("name", name);
+        jsonObject.put("quantity", getQuantity());
+        jsonObject.put("price", getLastPrice());
+        jsonObject.put("totalValueNxt", getAssetValue());
+        jsonObject.put("totalValueBtc", getAssetValue() * AssetObserver.nxtBtcPrice);
+        jsonObject.put("totalValueUsd", (long)(getAssetValue() * AssetObserver.nxtUsdPrice));
+        jsonObject.put("totalValueCny", (long)(getAssetValue() * AssetObserver.nxtCnyPrice));
+        jsonObject.put("issuedQuantity", (getQuantity() - getIssuerAccount().getQuantity()));
+        jsonObject.put("issuedValueNxt", getTradedValue());
+        jsonObject.put("issuedValueBtc", getTradedValue() * AssetObserver.nxtBtcPrice);
+        jsonObject.put("issuedValueUsd", (long)(getTradedValue() * AssetObserver.nxtUsdPrice));
+        jsonObject.put("issuedValueCny", (long)(getTradedValue() * AssetObserver.nxtCnyPrice));
+        jsonObject.put("numberOfTrades", getNumberOfTrades());
+        jsonObject.put("tradeVolume", getTradeVolume());
+        jsonObject.put("transfers", getNumberOfTransfers());
+        jsonObject.put("transferVolume", getTransferVolume());
+        return jsonObject;
+    }
+
+    public Object getTradeVolume() {
+        return 0;
+    }
+
+    public Object getTransferVolume() {
+        return 0;
     }
 }
