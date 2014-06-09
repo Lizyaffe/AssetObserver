@@ -21,6 +21,10 @@ public class AssetObserver {
     public static final int COLORED_COINS_BID = 3;
     public static final long[] MULTIPLIERS = {1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000};
     public static Logger log;
+    public static BterApi bterApi;
+    public static double nxtBtcPrice;
+    public static double nxtCnyPrice;
+    public static double nxtUsdPrice;
 
     public static void main(String[] args) {
         AssetObserver assetObserver = new AssetObserver();
@@ -36,25 +40,41 @@ public class AssetObserver {
         assetObserver.getMyBalance(assets, "13196039393619977660");
         assetObserver.getMyBalance(assets, "9747151086038883973");
         assetObserver.getMyBalance(assets, "3041433146235555849");
-        Asset nemStake = assets.get("12465186738101000735");
-        AccountBalance issuerAccount = nemStake.getIssuerAccount();
-        double totalQuantity = nemStake.getQuantity();
-        double totalValue = totalQuantity * nemStake.getLastPrice();
-        double tradedQuantity = totalQuantity - issuerAccount.getQuantity();
-        if (log.isLoggable(Level.INFO)) {
-            log.info(String.format("Asset %s totalQuantity %f totalValue %f tradedQuantity %f tradedValue %f",
-                    nemStake, totalQuantity, totalValue, tradedQuantity, nemStake.getTradedValue()));
+        for (Asset asset : assets.values()) {
+            if (asset.getNumberOfTrades() == 0) {
+                continue;
+            }
+            AccountBalance issuerAccount = asset.getIssuerAccount();
+            if (log.isLoggable(Level.INFO)) {
+                log.info(String.format("Asset %s totalQuantity %f totalValue %f distributedQuantity %f distributedValue %f trades %d transfers %d",
+                        asset,
+                        asset.getQuantity(),
+                        asset.getQuantity() * asset.getLastPrice(),
+                        asset.getQuantity() - issuerAccount.getQuantity(),
+                        asset.getTradedValue(),
+                        asset.getNumberOfTrades(),
+                        asset.getNumberOfTransfers()));
+            }
         }
     }
 
-    private static void initLogger() {
+    private static void init() {
         log = Logger.getGlobal();
         log.setLevel(Level.INFO);
         log.fine("AssetObserver started");
+
+        BterClient bterClient = new BterClient();
+        bterApi = new BterApi(bterClient);
+        nxtBtcPrice = bterApi.getLastPrice("NXT", "BTC");
+        nxtCnyPrice = bterApi.getLastPrice("NXT", "CNY");
+        BitstampClient bitstampClient = new BitstampClient();
+        BitstampApi bitstampApi = new BitstampApi(bitstampClient);
+        double btcUsdPrice = bitstampApi.getBtcUsdLastPrice();
+        nxtUsdPrice = nxtBtcPrice * btcUsdPrice;
     }
 
     public Map<String, Asset> load(JsonProvider jsonProvider) {
-        initLogger();
+        init();
         NxtApi nxtAPi = new NxtApi(jsonProvider);
         Map<String, Asset> assets = nxtAPi.getAllAssets();
         List<Trade> trades = nxtAPi.getAllTrades();
@@ -88,11 +108,14 @@ public class AssetObserver {
             }
         }
         if (log.isLoggable(Level.INFO)) {
-            log.info("Trades loading - Ok");
+            log.info("Trades loading done");
         }
         List<Transfer> assetTransfers = nxtAPi.getAssetTransfers();
         for (Transfer transfer : assetTransfers) {
             assets.get(transfer.getAssetId()).addTransfer(transfer);
+        }
+        if (log.isLoggable(Level.INFO)) {
+            log.info("Transfer loading done");
         }
         for (Asset asset : assets.values()) {
             asset.sortTransfers();
@@ -104,6 +127,9 @@ public class AssetObserver {
                         asset.getName(), asset.getQuantity(), asset.getLastPrice(), asset.getAssetValue()));
             }
             asset.analyzeAccountBalances();
+        }
+        if (log.isLoggable(Level.INFO)) {
+            log.info("Account analysis done");
         }
         return assets;
     }
