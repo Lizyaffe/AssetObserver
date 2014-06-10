@@ -121,6 +121,7 @@ public class APIServlet extends HttpServlet {
         resp.setDateHeader("Expires", 0);
 
         JSONStreamAware response = JSON.emptyJSON;
+        String strResponse = null;
 
         try {
             String requestType = req.getParameter("requestType");
@@ -136,7 +137,7 @@ public class APIServlet extends HttpServlet {
             }
 
             try {
-                response = apiRequestHandler.processRequest(assetObserver ,req);
+                strResponse = apiRequestHandler.processRequest(assetObserver ,req);
             } catch (RuntimeException e) {
                 AssetObserver.log.log(Level.WARNING, "Error processing API request", e);
                 response = ERROR_INCORRECT_REQUEST;
@@ -145,7 +146,11 @@ public class APIServlet extends HttpServlet {
         } finally {
             resp.setContentType("text/plain; charset=UTF-8");
             try (Writer writer = resp.getWriter()) {
-                response.writeJSONString(writer);
+                if (strResponse != null) {
+                    writer.write(strResponse);
+                } else {
+                    response.writeJSONString(writer);
+                }
             }
         }
 

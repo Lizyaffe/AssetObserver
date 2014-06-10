@@ -1,39 +1,35 @@
 package com.masterface.nxt.ae;
 
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.JSONStreamAware;
+import org.json.simple.JSONValue;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.Collections;
-import java.util.Comparator;
+import java.util.*;
 
 public class GetAllAssets extends APIRequestHandler {
 
     static final GetAllAssets instance = new GetAllAssets();
 
     @Override
-    JSONStreamAware processRequest(AssetObserver assetObserver, HttpServletRequest req) {
-
-        JSONObject response = new JSONObject();
-        JSONArray assetsJSONArray = new JSONArray();
-        response.put("assets", assetsJSONArray);
-        for (Asset asset : assetObserver.getAllAssets()) {
-            JSONObject jsonObject = asset.toJsonObject();
-            assetsJSONArray.add(jsonObject);
+    String processRequest(AssetObserver assetObserver, HttpServletRequest req) {
+        List<Asset> assetsList = assetObserver.getAllAssets();
+        Collections.sort(assetsList, Collections.reverseOrder(new AssetNumOfTradesComparator()));
+        Map<String, Object> map = new LinkedHashMap<>();
+        for (Asset asset : assetsList) {
+            map.put(asset.getName(), asset.getData());
         }
-        Collections.sort(assetsJSONArray, Collections.reverseOrder(new AssetNumOfTradesComparator()));
-        return response;
+        return JSONValue.toJSONString(map);
     }
 
-    static class AssetNumOfTradesComparator implements Comparator<JSONObject> {
+    static class AssetNumOfTradesComparator implements Comparator<Asset> {
 
         @Override
-        public int compare(JSONObject o1, JSONObject o2) {
-            if ((Long)(o1.get("numberOfTrades")) < (Long)(o2.get("numberOfTrades"))) {
+        public int compare(Asset o1, Asset o2) {
+            double tradeVolume1 = o1.getTradeVolume();
+            double tradeVolume2 = o2.getTradeVolume();
+            if (tradeVolume1 < tradeVolume2) {
                 return -1;
             }
-            if ((Long)(o1.get("numberOfTrades")) > (Long)(o2.get("numberOfTrades"))) {
+            if (tradeVolume1 > tradeVolume2) {
                 return 1;
             }
             return 0;

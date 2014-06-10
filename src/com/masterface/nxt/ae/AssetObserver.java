@@ -9,7 +9,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -86,6 +85,45 @@ public class AssetObserver {
     public Map<String, Asset> load(JsonProvider jsonProvider) {
         NxtApi nxtAPi = new NxtApi(jsonProvider);
         assets = nxtAPi.getAllAssets();
+        loadTrades(nxtAPi);
+        loadTransfers(nxtAPi);
+        for (Asset asset : assets.values()) {
+            asset.sortTransfers();
+            asset.setLastPrice();
+            asset.setAccountBalanceDistribution();
+
+            if (log.isLoggable(Level.FINE)) {
+                log.info(String.format("Asset %s quantity %.2f price %f value %d\n",
+                        asset.getName(), asset.getQuantity(), asset.getLastPrice(), asset.getAssetValue()));
+            }
+            asset.verifyAccountBalances();
+        }
+        if (log.isLoggable(Level.INFO)) {
+            log.info("Account analysis done");
+        }
+        try {
+            ArrayList<String> lines = nxtAPi.getLines();
+            if (lines != null) {
+                Path path = Paths.get("cache.log");
+                Files.write(path, lines, Charset.forName("UTF-8"), StandardOpenOption.WRITE);
+            }
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+        return assets;
+    }
+
+    private void loadTransfers(NxtApi nxtAPi) {
+        List<Transfer> assetTransfers = nxtAPi.getAssetTransfers();
+        for (Transfer transfer : assetTransfers) {
+            assets.get(transfer.getAssetId()).addTransfer(transfer);
+        }
+        if (log.isLoggable(Level.INFO)) {
+            log.info("Transfer loading done");
+        }
+    }
+
+    private void loadTrades(NxtApi nxtAPi) {
         List<Trade> trades = nxtAPi.getAllTrades();
         for (Trade trade : trades) {
             JSONObject bidTransaction = nxtAPi.getTransaction(trade.getBidOrderId());
@@ -119,37 +157,6 @@ public class AssetObserver {
         if (log.isLoggable(Level.INFO)) {
             log.info("Trades loading done");
         }
-        List<Transfer> assetTransfers = nxtAPi.getAssetTransfers();
-        for (Transfer transfer : assetTransfers) {
-            assets.get(transfer.getAssetId()).addTransfer(transfer);
-        }
-        if (log.isLoggable(Level.INFO)) {
-            log.info("Transfer loading done");
-        }
-        for (Asset asset : assets.values()) {
-            asset.sortTransfers();
-            asset.setLastPrice();
-            asset.calcAccountQty(asset);
-
-            if (log.isLoggable(Level.FINE)) {
-                log.info(String.format("Asset %s quantity %.2f price %f value %d\n",
-                        asset.getName(), asset.getQuantity(), asset.getLastPrice(), asset.getAssetValue()));
-            }
-            asset.analyzeAccountBalances();
-        }
-        if (log.isLoggable(Level.INFO)) {
-            log.info("Account analysis done");
-        }
-        try {
-            ArrayList<String> lines = nxtAPi.getLines();
-            if (lines != null) {
-                Path path = Paths.get("cache.log");
-                Files.write(path, lines, Charset.forName("UTF-8"), StandardOpenOption.WRITE);
-            }
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
-        }
-        return assets;
     }
 
     @SuppressWarnings("UnusedDeclaration")
@@ -201,7 +208,12 @@ public class AssetObserver {
         return balances;
     }
 
-    public Collection<Asset> getAllAssets() {
-        return assets.values();
+    public List<Asset> getAllAssets() {
+        List<Asset> assetList = new ArrayList<>();
+        for (Asset asset : assets.values()) {
+            assetList.add(asset);
+
+        }
+        return assetList;
     }
 }
