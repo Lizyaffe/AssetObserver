@@ -4,9 +4,13 @@
     <output url="file://$MODULE_DIR$/out/production/asset" />
     <output-test url="file://$MODULE_DIR$/out/test/asset" />
     <exclude-output />
-    <content url="file://$MODULE_DIR$">
+    <content url="file://$MODULE_DIR$/src">
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
+    </content>
+    <content url="file://$MODULE_DIR$/test">
       <sourceFolder url="file://$MODULE_DIR$/test" isTestSource="true" />
+    </content>
+    <content url="file://$MODULE_DIR$/test.resources">
       <sourceFolder url="file://$MODULE_DIR$/test.resources" type="java-test-resource" />
     </content>
     <orderEntry type="inheritedJdk" />
@@ -97,15 +101,6 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/nxt.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library>
-        <CLASSES>
           <root url="jar://$MODULE_DIR$/lib/jetty-continuation-9.1.5.v20140505.jar!/" />
         </CLASSES>
         <JAVADOC />
@@ -182,18 +177,6 @@
         </CLASSES>
         <JAVADOC />
         <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library>
-        <CLASSES>
-          <root url="file://$MODULE_DIR$" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES>
-          <root url="file://$MODULE_DIR$/src" />
-          <root url="file://$MODULE_DIR$/test" />
-        </SOURCES>
       </library>
     </orderEntry>
   </component>

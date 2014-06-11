@@ -1,6 +1,6 @@
 package com.masterface.nxt.ae;
 
-import nxt.util.JSON;
+import org.json.simple.JSONObject;
 import org.json.simple.JSONStreamAware;
 
 import javax.servlet.ServletConfig;
@@ -10,86 +10,30 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.Writer;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
-
-import static nxt.http.JSONResponses.*;
 
 public class APIServlet extends HttpServlet {
 
-    static final Map<String,APIRequestHandler> apiRequestHandlers;
+    public static final JSONStreamAware ERROR_INCORRECT_REQUEST;
+
+    static {
+        JSONObject response = new JSONObject();
+        response.put("errorCode", 1);
+        response.put("errorDescription", "Incorrect request");
+        ERROR_INCORRECT_REQUEST = Utils.prepare(response);
+    }
+
+    static final Map<String, APIRequestHandler> apiRequestHandlers;
 
     static {
 
-        Map<String,APIRequestHandler> map = new HashMap<>();
+        Map<String, APIRequestHandler> map = new HashMap<>();
         map.put("getAllAssets", GetAllAssets.instance);
-//        map.put("broadcastTransaction", BroadcastTransaction.instance);
-//        map.put("calculateFullHash", CalculateFullHash.instance);
-//        map.put("cancelAskOrder", CancelAskOrder.instance);
-//        map.put("cancelBidOrder", CancelBidOrder.instance);
-//        map.put("castVote", CastVote.instance);
-//        map.put("createPoll", CreatePoll.instance);
-//        map.put("decodeHallmark", DecodeHallmark.instance);
-//        map.put("decodeToken", DecodeToken.instance);
-//        map.put("generateToken", GenerateToken.instance);
-//        map.put("getAccount", GetAccount.instance);
-//        map.put("getAccountBlockIds", GetAccountBlockIds.instance);
-//        map.put("getAccountId", GetAccountId.instance);
-//        map.put("getAccountPublicKey", GetAccountPublicKey.instance);
-//        map.put("getAccountTransactionIds", GetAccountTransactionIds.instance);
-//        map.put("getAlias", GetAlias.instance);
-//        map.put("getAliases", GetAliases.instance);
-//        map.put("getAllAssets", GetAllAssets.instance);
-//        map.put("getAsset", GetAsset.instance);
-//        map.put("getAssets", GetAssets.instance);
-//        map.put("getAssetIds", GetAssetIds.instance);
-//        map.put("getAssetsByIssuer", GetAssetsByIssuer.instance);
-//        map.put("getBalance", GetBalance.instance);
-//        map.put("getBlock", GetBlock.instance);
-//        map.put("getBlockchainStatus", GetBlockchainStatus.instance);
-//        map.put("getConstants", GetConstants.instance);
-//        map.put("getGuaranteedBalance", GetGuaranteedBalance.instance);
-//        map.put("getMyInfo", GetMyInfo.instance);
-//        if (Constants.isTestnet) {
-//            map.put("getNextBlockGenerators", GetNextBlockGenerators.instance);
-//        }
-//        map.put("getPeer", GetPeer.instance);
-//        map.put("getPeers", GetPeers.instance);
-//        map.put("getPoll", GetPoll.instance);
-//        map.put("getPollIds", GetPollIds.instance);
-//        map.put("getState", GetState.instance);
-//        map.put("getTime", GetTime.instance);
-//        map.put("getTrades", GetTrades.instance);
-//        map.put("getAllTrades", GetAllTrades.instance);
-//        map.put("getTransaction", GetTransaction.instance);
-//        map.put("getTransactionBytes", GetTransactionBytes.instance);
-//        map.put("getUnconfirmedTransactionIds", GetUnconfirmedTransactionIds.instance);
-//        map.put("getUnconfirmedTransactions", GetUnconfirmedTransactions.instance);
-//        map.put("getAccountCurrentAskOrderIds", GetAccountCurrentAskOrderIds.instance);
-//        map.put("getAccountCurrentBidOrderIds", GetAccountCurrentBidOrderIds.instance);
-//        map.put("getAllOpenOrders", GetAllOpenOrders.instance);
-//        map.put("getAskOrder", GetAskOrder.instance);
-//        map.put("getAskOrderIds", GetAskOrderIds.instance);
-//        map.put("getAskOrders", GetAskOrders.instance);
-//        map.put("getBidOrder", GetBidOrder.instance);
-//        map.put("getBidOrderIds", GetBidOrderIds.instance);
-//        map.put("getBidOrders", GetBidOrders.instance);
-//        map.put("issueAsset", IssueAsset.instance);
-//        map.put("leaseBalance", LeaseBalance.instance);
-//        map.put("markHost", MarkHost.instance);
-//        map.put("parseTransaction", ParseTransaction.instance);
-//        map.put("placeAskOrder", PlaceAskOrder.instance);
-//        map.put("placeBidOrder", PlaceBidOrder.instance);
-//        map.put("sendMessage", SendMessage.instance);
-//        map.put("sendMoney", SendMoney.instance);
-//        map.put("setAccountInfo", SetAccountInfo.instance);
-//        map.put("setAlias", SetAlias.instance);
-//        map.put("signTransaction", SignTransaction.instance);
-//        map.put("startForging", StartForging.instance);
-//        map.put("stopForging", StopForging.instance);
-//        map.put("getForging", GetForging.instance);
-//        map.put("transferAsset", TransferAsset.instance);
-
+        map.put("getAccountBalance", GetAccountBalance.instance);
+        map.put("getAssetDistribution", GetAssetDistribution.instance);
         apiRequestHandlers = Collections.unmodifiableMap(map);
     }
 
@@ -120,7 +64,7 @@ public class APIServlet extends HttpServlet {
         resp.setHeader("Pragma", "no-cache");
         resp.setDateHeader("Expires", 0);
 
-        JSONStreamAware response = JSON.emptyJSON;
+        JSONStreamAware response = Utils.emptyJSON;
         String strResponse = null;
 
         try {
@@ -137,7 +81,7 @@ public class APIServlet extends HttpServlet {
             }
 
             try {
-                strResponse = apiRequestHandler.processRequest(assetObserver ,req);
+                strResponse = apiRequestHandler.processRequest(assetObserver, req);
             } catch (RuntimeException e) {
                 AssetObserver.log.log(Level.WARNING, "Error processing API request", e);
                 response = ERROR_INCORRECT_REQUEST;

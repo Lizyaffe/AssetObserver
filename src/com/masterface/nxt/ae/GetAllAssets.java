@@ -14,10 +14,27 @@ public class GetAllAssets extends APIRequestHandler {
         List<Asset> assetsList = assetObserver.getAllAssets();
         Collections.sort(assetsList, Collections.reverseOrder(new AssetNumOfTradesComparator()));
         Map<String, Object> map = new LinkedHashMap<>();
+        int count = 0;
+        long nofTrades = 0;
+        double nxtVolume = 0;
         for (Asset asset : assetsList) {
-            map.put(asset.getName(), asset.getData());
+            Map<String, Object> data = asset.getData();
+            map.put(asset.getName(), data);
+            count++;
+            nofTrades += Long.parseLong((String) data.get("nofTrades"));
+            nxtVolume += Double.parseDouble((String) data.get("nxtVolume"));
         }
-        return JSONValue.toJSONString(map);
+        List<Object> response = new ArrayList<>();
+        Map<String, String> allAssets = new LinkedHashMap<>();
+        allAssets.put("assetCount", String.format("%d", count));
+        allAssets.put("nofTrades", String.format("%d", nofTrades));
+        allAssets.put("nxtVolume", String.format("%.2f", nxtVolume));
+        allAssets.put("usdVolume", String.format("%.2f", nxtVolume * AssetObserver.nxtUsdPrice));
+        allAssets.put("btcVolume", String.format("%.2f", nxtVolume * AssetObserver.nxtBtcPrice));
+        allAssets.put("updateTime", String.format("%s", new Date(assetObserver.getCacheModificationTime())));
+        response.add(allAssets);
+        response.add(map);
+        return JSONValue.toJSONString(response);
     }
 
     static class AssetNumOfTradesComparator implements Comparator<Asset> {

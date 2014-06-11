@@ -58,7 +58,7 @@ class Asset {
     }
 
     public double getQuantity() {
-        return quantityQNT / (double)AssetObserver.MULTIPLIERS[(int)getDecimals()];
+        return quantityQNT / (double) AssetObserver.MULTIPLIERS[(int) getDecimals()];
     }
 
     public long getNumberOfTrades() {
@@ -139,12 +139,12 @@ class Asset {
     }
 
     /**
-        Set the asset price according to the most recent trade
+     * Set the asset price according to the most recent trade
      */
     public void setLastPrice() {
         for (int i = transfers.size() - 1; i > 0; i--) {
             if (transfers.get(i) instanceof Trade) {
-                lastPrice = ((Trade)transfers.get(i)).getPriceNQT();
+                lastPrice = ((Trade) transfers.get(i)).getPriceNQT();
                 break;
             }
         }
@@ -155,7 +155,11 @@ class Asset {
     }
 
     public double getTradedValue() {
-        return (getQuantity() - getIssuerAccount().getQuantity()) * getLastPrice();
+        return getIssuedQuantity() * getLastPrice();
+    }
+
+    public double getIssuedQuantity() {
+        return getQuantity() - getIssuerAccount().getQuantity();
     }
 
     public List<AccountBalance> getAccountBalancesList() {
@@ -191,26 +195,16 @@ class Asset {
 
     public Map<String, Object> getData() {
         Map<String, Object> map = new LinkedHashMap<>();
-        map.put("Name", name);
-        map.put("Qty", String.format("%." + getDecimals() +"f", getQuantity()));
-        map.put("IssuerAcctQty", String.format("%." + getDecimals() +"f", getIssuerAccount().getQuantity()));
-        map.put("NxtPrice", getLastPrice());
-        map.put("NxtValue", getAssetValue());
-//        jsonObject.put("BtcVal", getAssetValue() * AssetObserver.nxtBtcPrice);
-        map.put("UsdValue", (long) (getAssetValue() * AssetObserver.nxtUsdPrice));
-//        jsonObject.put("CnyVal", (long)(getAssetValue() * AssetObserver.nxtCnyPrice));
-//        jsonObject.put("issuedQuantity", (getQuantity() - getIssuerAccount().getQuantity()));
-//        map.put("NxtVal2", getTradedValue());
-//        jsonObject.put("issuedValueBtc", getTradedValue() * AssetObserver.nxtBtcPrice);
-//        map.put("UsdVal2", (long) (getTradedValue() * AssetObserver.nxtUsdPrice));
-//        jsonObject.put("issuedValueCny", (long)(getTradedValue() * AssetObserver.nxtCnyPrice));
-        map.put("nofTrades", getNumberOfTrades());
+        map.put("name", name);
+        map.put("qty", String.format("%." + getDecimals() + "f", getQuantity()));
+        map.put("issuedQty", String.format("%." + getDecimals() + "f", getQuantity() - getIssuerAccount().getQuantity()));
+        map.put("nxtPrice", String.format("%.2f", getLastPrice()));
+        map.put("nxtValue", String.format("%d", getAssetValue()));
+        map.put("usdValue", String.format("%.2f", getAssetValue() * AssetObserver.nxtUsdPrice));
+        map.put("nofTrades", String.format("%d", getNumberOfTrades()));
         double tradeVolume = getTradeVolume();
-        map.put("NxtVolume", Math.round(tradeVolume));
-        map.put("UsdVolume", Math.round(tradeVolume * AssetObserver.nxtUsdPrice));
-//        jsonObject.put("tradeVolume", getTradeVolume());
-//        map.put("nofTransfers", getNumberOfTransfers());
-//        jsonObject.put("transferVolume", getTransferVolume());
+        map.put("nxtVolume", String.format("%d", Math.round(tradeVolume)));
+        map.put("usdVolume", String.format("%d", Math.round(tradeVolume * AssetObserver.nxtUsdPrice)));
         map.put("id", assetId);
         return map;
     }
@@ -221,12 +215,8 @@ class Asset {
             if (!transfer.isTrade()) {
                 continue;
             }
-            volume += transfer.getQuantityQNT() * ((Trade)transfer).getPriceNQT() / AssetObserver.NQT_IN_NXT;
+            volume += transfer.getQuantityQNT() * ((Trade) transfer).getPriceNQT() / AssetObserver.NQT_IN_NXT;
         }
         return volume;
-    }
-
-    public Object getTransferVolume() {
-        return 0;
     }
 }

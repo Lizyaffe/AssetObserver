@@ -10,13 +10,10 @@ import java.util.Properties;
 
 public class PropertiesStorage {
 
-    private static final Properties defaultProperties = new Properties();
-
     public static final String ASSET_OBSERVER_DEFAULT_PROPERTIES = "asset.observer.default.properties";
     public static final String ASSET_OBSERVER_PROPERTIES = "asset.observer.properties";
-
     static {
-        System.out.println("Initializing asset observer");
+        System.out.println("Initializing asset observer properties");
         try (InputStream is = ClassLoader.getSystemResourceAsStream(ASSET_OBSERVER_DEFAULT_PROPERTIES)) {
             if (is != null) {
                 defaultProperties.load(is);
@@ -36,6 +33,8 @@ public class PropertiesStorage {
             throw new RuntimeException("Error loading nxt-default.properties", e);
         }
     }
+
+    private static final Properties defaultProperties = new Properties();
     private static final Properties properties = new Properties(defaultProperties);
     static {
         try (InputStream is = ClassLoader.getSystemResourceAsStream(ASSET_OBSERVER_PROPERTIES)) {
@@ -73,6 +72,7 @@ public class PropertiesStorage {
         }
     }
 
+    @SuppressWarnings("UnusedDeclaration")
     public static List<String> getStringListProperty(String name) {
         String value = getStringProperty(name);
         if (value == null || value.length() == 0) {

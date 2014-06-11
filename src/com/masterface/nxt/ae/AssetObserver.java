@@ -4,13 +4,12 @@ import org.json.simple.JSONObject;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -23,6 +22,7 @@ public class AssetObserver {
     public static final int COLORED_COINS_ASK = 2;
     public static final int COLORED_COINS_BID = 3;
     public static final long[] MULTIPLIERS = {1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000};
+    public static final String CACHE_LOG = "cache.log";
 
     public static Logger log;
 
@@ -32,8 +32,10 @@ public class AssetObserver {
     public static double nxtCnyPrice;
 
     private Map<String, Asset> assets;
+    private long cacheModificationTime;
 
     static {
+        System.setProperty("java.util.logging.SimpleFormatter.format", "%1$tY-%1$tm-%1$td %1$tH:%1$tM:%1$tS %4$s %2$s %5$s%6$s%n");
         log = Logger.getGlobal();
         log.setLevel(Level.INFO);
         log.fine("AssetObserver started");
@@ -43,7 +45,6 @@ public class AssetObserver {
     }
 
     public static void main(String[] args) {
-//        JsonProvider jsonProvider = JsonProviderFactory.getJsonProvider(null);
         log = Logger.getGlobal();
         log.setLevel(Level.INFO);
         log.fine("AssetObserver started");
@@ -53,22 +54,12 @@ public class AssetObserver {
         readExchangeRates();
         AssetObserver assetObserver = new AssetObserver();
         assetObserver.loadCache();
-//        Runnable r = () -> assetObserver.load(jsonProvider);
-//        ExecutorService executorService = Executors.newSingleThreadExecutor();
-//        executorService.execute(r);
+        AssetObserver online = new AssetObserver();
+        JsonProvider jsonProvider = JsonProviderFactory.getJsonProvider(null);
+        Runnable r = () -> online.load(jsonProvider);
+        ExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+        executorService.execute(r);
         new ServerWrapper().start(assetObserver);
-    }
-
-    private void loadCache() {
-        if (log.isLoggable(Level.INFO)) {
-            log.info("Loading data from cache");
-        }
-        Path testResource = Paths.get("cache.log");
-        JsonProvider jsonProvider = JsonProviderFactory.getJsonProvider(testResource);
-        assets = load(jsonProvider);
-        if (log.isLoggable(Level.INFO)) {
-            log.info("Loading from cache done");
-        }
     }
 
     private static void readExchangeRates() {
@@ -80,6 +71,23 @@ public class AssetObserver {
         BitstampApi bitstampApi = new BitstampApi(bitstampClient);
         double btcUsdPrice = bitstampApi.getBtcUsdLastPrice();
         nxtUsdPrice = nxtBtcPrice * btcUsdPrice;
+    }
+
+    private void loadCache() {
+        if (log.isLoggable(Level.INFO)) {
+            log.info("Loading data from cache");
+        }
+        Path testResource = Paths.get(CACHE_LOG);
+        try {
+            cacheModificationTime = Files.getLastModifiedTime(testResource, LinkOption.NOFOLLOW_LINKS).toMillis();
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+        JsonProvider jsonProvider = JsonProviderFactory.getJsonProvider(testResource);
+        assets = load(jsonProvider);
+        if (log.isLoggable(Level.INFO)) {
+            log.info("Loading from cache done");
+        }
     }
 
     public Map<String, Asset> load(JsonProvider jsonProvider) {
@@ -104,7 +112,7 @@ public class AssetObserver {
         try {
             ArrayList<String> lines = nxtAPi.getLines();
             if (lines != null) {
-                Path path = Paths.get("cache.log");
+                Path path = Paths.get(CACHE_LOG);
                 Files.write(path, lines, Charset.forName("UTF-8"), StandardOpenOption.WRITE);
             }
         } catch (IOException e) {
@@ -215,5 +223,13 @@ public class AssetObserver {
 
         }
         return assetList;
+    }
+
+    public Asset getAsset(String assetId) {
+        return assets.get(assetId);
+    }
+
+    public long getCacheModificationTime() {
+        return cacheModificationTime;
     }
 }
