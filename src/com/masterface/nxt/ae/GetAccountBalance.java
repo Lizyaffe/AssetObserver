@@ -38,7 +38,7 @@ public class GetAccountBalance extends APIRequestHandler {
         accountDetails.put("usdValue", String.format("%.2f", value * AssetObserver.nxtUsdPrice));
         accountDetails.put("btcValue", String.format("%.2f", value * AssetObserver.nxtBtcPrice));
         accountDetails.put("nxtFees", String.format("%d", fees));
-        accountDetails.put("updateTime", String.format("%s", new Date(assetObserver.getCacheModificationTime())));
+        accountDetails.put("updateTime", String.format("%s", new Date(assetObserver.getUpdateTime())));
         response.add(accountDetails);
         response.add(map);
         return JSONValue.toJSONString(response);

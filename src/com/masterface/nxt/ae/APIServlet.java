@@ -37,9 +37,9 @@ public class APIServlet extends HttpServlet {
         apiRequestHandlers = Collections.unmodifiableMap(map);
     }
 
-    private final AssetObserver assetObserver;
+    private volatile AssetObserver assetObserver;
 
-    public APIServlet(AssetObserver assetObserver) {
+    public void setAssetObserver(AssetObserver assetObserver) {
         this.assetObserver = assetObserver;
     }
 

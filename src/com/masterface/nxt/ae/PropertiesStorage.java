@@ -12,6 +12,10 @@ public class PropertiesStorage {
 
     public static final String ASSET_OBSERVER_DEFAULT_PROPERTIES = "asset.observer.default.properties";
     public static final String ASSET_OBSERVER_PROPERTIES = "asset.observer.properties";
+
+    private static final Properties defaultProperties = new Properties();
+    private static final Properties properties = new Properties(defaultProperties);
+
     static {
         System.out.println("Initializing asset observer properties");
         try (InputStream is = ClassLoader.getSystemResourceAsStream(ASSET_OBSERVER_DEFAULT_PROPERTIES)) {
@@ -34,8 +38,6 @@ public class PropertiesStorage {
         }
     }
 
-    private static final Properties defaultProperties = new Properties();
-    private static final Properties properties = new Properties(defaultProperties);
     static {
         try (InputStream is = ClassLoader.getSystemResourceAsStream(ASSET_OBSERVER_PROPERTIES)) {
             if (is != null) {
@@ -63,7 +65,7 @@ public class PropertiesStorage {
 
     public static String getStringProperty(String name, String defaultValue) {
         String value = properties.getProperty(name);
-        if (value != null && ! "".equals(value)) {
+        if (value != null && !"".equals(value)) {
             AssetObserver.log.info(name + " = \"" + value + "\"");
             return value;
         } else {

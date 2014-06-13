@@ -6,10 +6,12 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -32,7 +34,7 @@ public class AssetObserver {
     public static double nxtCnyPrice;
 
     private Map<String, Asset> assets;
-    private long cacheModificationTime;
+    private long updateTime;
 
     static {
         System.setProperty("java.util.logging.SimpleFormatter.format", "%1$tY-%1$tm-%1$td %1$tH:%1$tM:%1$tS %4$s %2$s %5$s%6$s%n");
@@ -42,24 +44,28 @@ public class AssetObserver {
         if (log.isLoggable(Level.INFO)) {
             log.info("Loading started");
         }
+        Thread.setDefaultUncaughtExceptionHandler(new ExceptionHandler());
     }
 
     public static void main(String[] args) {
-        log = Logger.getGlobal();
-        log.setLevel(Level.INFO);
-        log.fine("AssetObserver started");
-        if (log.isLoggable(Level.INFO)) {
-            log.info("Loading started");
-        }
         readExchangeRates();
         AssetObserver assetObserver = new AssetObserver();
         assetObserver.loadCache();
-        AssetObserver online = new AssetObserver();
         JsonProvider jsonProvider = JsonProviderFactory.getJsonProvider(null);
-        Runnable r = () -> online.load(jsonProvider);
-        ExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
-        executorService.execute(r);
-        new ServerWrapper().start(assetObserver);
+        ServerWrapper serverWrapper = new ServerWrapper();
+        Runnable r = () -> {
+            try {
+                AssetObserver online = new AssetObserver();
+                online.updateTime = System.currentTimeMillis();
+                online.load(jsonProvider);
+                serverWrapper.setAssetObserver(online);
+            } catch (Throwable t) {
+                t.printStackTrace();
+            }
+        };
+        ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+        executorService.scheduleWithFixedDelay(r, 0, 1, TimeUnit.MINUTES);
+        serverWrapper.start(assetObserver);
     }
 
     private static void readExchangeRates() {
@@ -74,12 +80,19 @@ public class AssetObserver {
     }
 
     private void loadCache() {
+        Path testResource = Paths.get(CACHE_LOG);
+        if (!Files.exists(testResource)) {
+            if (log.isLoggable(Level.INFO)) {
+                log.info("Cache file does not exist, wait for reading data from the blockchain");
+            }
+            assets = new HashMap<>();
+            return;
+        }
         if (log.isLoggable(Level.INFO)) {
             log.info("Loading data from cache");
         }
-        Path testResource = Paths.get(CACHE_LOG);
         try {
-            cacheModificationTime = Files.getLastModifiedTime(testResource, LinkOption.NOFOLLOW_LINKS).toMillis();
+            updateTime = Files.getLastModifiedTime(testResource, LinkOption.NOFOLLOW_LINKS).toMillis();
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
@@ -113,18 +126,30 @@ public class AssetObserver {
             ArrayList<String> lines = nxtAPi.getLines();
             if (lines != null) {
                 Path path = Paths.get(CACHE_LOG);
+                if (!Files.exists(path)) {
+                    Files.createFile(path);
+                }
                 Files.write(path, lines, Charset.forName("UTF-8"), StandardOpenOption.WRITE);
             }
         } catch (IOException e) {
             throw new IllegalStateException(e);
+        } finally {
+            nxtAPi.resetLines();
         }
         return assets;
     }
 
     private void loadTransfers(NxtApi nxtAPi) {
-        List<Transfer> assetTransfers = nxtAPi.getAssetTransfers();
+        BlockchainData blockchainData = nxtAPi.getAssetTransfers();
+        List<Transfer> assetTransfers = blockchainData.getAssetTransfers();
         for (Transfer transfer : assetTransfers) {
             assets.get(transfer.getAssetId()).addTransfer(transfer);
+        }
+        List<Tuple3> assetCreation = blockchainData.getAssetCreation();
+        for (Tuple3 assetExtraData : assetCreation) {
+            Asset asset = assets.get((String) assetExtraData.x);
+            asset.setTimeStamp((Integer) assetExtraData.y);
+            asset.setCreationFee((Long) assetExtraData.z);
         }
         if (log.isLoggable(Level.INFO)) {
             log.info("Transfer loading done");
@@ -167,29 +192,6 @@ public class AssetObserver {
         }
     }
 
-    @SuppressWarnings("UnusedDeclaration")
-    private void test(Map<String, Asset> assets) {
-        getMyBalance(assets, "13196039393619977660");
-        getMyBalance(assets, "9747151086038883973");
-        getMyBalance(assets, "3041433146235555849");
-        for (Asset asset : assets.values()) {
-            if (asset.getNumberOfTrades() == 0) {
-                continue;
-            }
-            AccountBalance issuerAccount = asset.getIssuerAccount();
-            if (log.isLoggable(Level.INFO)) {
-                log.info(String.format("Asset %s totalQuantity %f totalValue %f distributedQuantity %f distributedValue %f trades %d transfers %d",
-                        asset,
-                        asset.getQuantity(),
-                        asset.getQuantity() * asset.getLastPrice(),
-                        asset.getQuantity() - issuerAccount.getQuantity(),
-                        asset.getTradedValue(),
-                        asset.getNumberOfTrades(),
-                        asset.getNumberOfTransfers()));
-            }
-        }
-    }
-
     List<AccountBalance> getMyBalance(Map<String, Asset> assets, String accountId) {
         List<AccountBalance> balances = new ArrayList<>();
         for (Asset asset : assets.values()) {
@@ -229,7 +231,7 @@ public class AssetObserver {
         return assets.get(assetId);
     }
 
-    public long getCacheModificationTime() {
-        return cacheModificationTime;
+    public long getUpdateTime() {
+        return updateTime;
     }
 }

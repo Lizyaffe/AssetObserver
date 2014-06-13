@@ -56,7 +56,7 @@ public class GetAssetDistribution extends APIRequestHandler {
         assetDistribution.put("timeStamp", String.format("%d", timeStamp));
         assetDistribution.put("balanceDate", String.format("%s",
                 (balanceDate == null || balanceDate.equals("")) ? "now" : balanceDate));
-        assetDistribution.put("updateTime", String.format("%s", new Date(assetObserver.getCacheModificationTime())));
+        assetDistribution.put("updateTime", String.format("%s", new Date(assetObserver.getUpdateTime())));
         response.add(assetDistribution);
         response.add(map);
         return JSONValue.toJSONString(response);

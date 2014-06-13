@@ -66,9 +66,10 @@ public class NxtApi {
         return tradeList;
     }
 
-    public List<Transfer> getAssetTransfers() {
+    public BlockchainData getAssetTransfers() {
         String blockId = getLastBlockId();
         List<Transfer> assetTransfers = new ArrayList<>();
+        List<Tuple3> assetCreation = new ArrayList<>();
         while (true) {
             JSONObject block = getBlock(blockId);
             long height = (Long) block.get("height");
@@ -82,21 +83,27 @@ public class NxtApi {
                 if ((Long) transaction.get("type") != 2) {
                     continue;
                 }
-                if ((Long) transaction.get("subtype") != 1) {
-                    continue;
+                if ((Long) transaction.get("subtype") == 0) {
+                    String assetId = (String) transaction.get("transaction");
+                    Integer timeStamp = Integer.parseInt(((Long) transaction.get("timestamp")).toString());
+                    long feeNQT = Long.parseLong((String) transaction.get("feeNQT"));
+                    Tuple3<String, Integer, Long> assetInfo = new Tuple3<>(assetId, timeStamp, feeNQT);
+                    assetCreation.add(assetInfo);
                 }
-                JSONObject attachment = (JSONObject) transaction.get("attachment");
-                Transfer transfer = new Transfer((String) attachment.get("asset"), (Long) transaction.get("timestamp"),
-                        Long.parseLong((String) attachment.get("quantityQNT")), blockId,
-                        (String) transaction.get("sender"), (String) transaction.get("recipient"));
-                if (AssetObserver.log.isLoggable(Level.FINE)) {
-                    AssetObserver.log.info("Transfer:" + transfer);
+                if ((Long) transaction.get("subtype") == 1) {
+                    JSONObject attachment = (JSONObject) transaction.get("attachment");
+                    Transfer transfer = new Transfer((String) attachment.get("asset"), (Long) transaction.get("timestamp"),
+                            Long.parseLong((String) attachment.get("quantityQNT")), blockId,
+                            (String) transaction.get("sender"), (String) transaction.get("recipient"));
+                    if (AssetObserver.log.isLoggable(Level.FINE)) {
+                        AssetObserver.log.info("Transfer:" + transfer);
+                    }
+                    assetTransfers.add(transfer);
                 }
-                assetTransfers.add(transfer);
             }
             blockId = (String) block.get("previousBlock");
         }
-        return assetTransfers;
+        return new BlockchainData(assetTransfers, assetCreation);
     }
 
     public String getLastBlockId() {
@@ -108,5 +115,9 @@ public class NxtApi {
 
     public ArrayList<String> getLines() {
         return jsonProvider.getLines();
+    }
+
+    public void resetLines() {
+        jsonProvider.resetLines();
     }
 }

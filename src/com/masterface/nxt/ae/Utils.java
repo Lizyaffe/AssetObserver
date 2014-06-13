@@ -50,6 +50,10 @@ public class Utils {
         return getTimeStamp(new Date());
     }
 
+    public static Date fromEpochTime(int epochTime) {
+        return new Date(epochTime * 1000L + Constants.EPOCH_BEGINNING - 500L);
+    }
+
     public static Long parseAccountId(String account) {
         if (account == null) {
             return null;

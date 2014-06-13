@@ -142,7 +142,7 @@ class AccountBalance implements Comparable<AccountBalance> {
         if (timeStamp > 0) {
             quantity = getQuantity(timeStamp);
         }
-        if (Math.abs(quantity) < 1 / (double) AssetObserver.MULTIPLIERS[(int) asset.getDecimals()] / 2) {
+        if (!isIssuer && Math.abs(quantity) < 1 / (double) AssetObserver.MULTIPLIERS[(int) asset.getDecimals()] / 2) {
             return null;
         }
         map.put("qty", String.format("%." + asset.getDecimals() + "f", quantity));

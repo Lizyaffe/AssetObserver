@@ -19,6 +19,8 @@ class Asset {
     private final Map<String, AccountBalance> accountBalancesMap;
     private final List<AccountBalance> accountBalancesList;
     private double lastPrice;
+    private int creationTimeStamp;
+    private long creationFee;
 
     Asset(JSONObject assetJson) {
         this.assetId = (String) assetJson.get("asset");
@@ -154,10 +156,6 @@ class Asset {
         return accountBalancesMap.get(accountId);
     }
 
-    public double getTradedValue() {
-        return getIssuedQuantity() * getLastPrice();
-    }
-
     public double getIssuedQuantity() {
         return getQuantity() - getIssuerAccount().getQuantity();
     }
@@ -205,6 +203,8 @@ class Asset {
         double tradeVolume = getTradeVolume();
         map.put("nxtVolume", String.format("%d", Math.round(tradeVolume)));
         map.put("usdVolume", String.format("%d", Math.round(tradeVolume * AssetObserver.nxtUsdPrice)));
+        map.put("creationTime", String.format("%s", Utils.fromEpochTime(creationTimeStamp)));
+        map.put("creationFee", String.format("%d", creationFee / AssetObserver.NQT_IN_NXT));
         map.put("id", assetId);
         return map;
     }
@@ -218,5 +218,13 @@ class Asset {
             volume += transfer.getQuantityQNT() * ((Trade) transfer).getPriceNQT() / AssetObserver.NQT_IN_NXT;
         }
         return volume;
+    }
+
+    public void setTimeStamp(Integer timeStamp) {
+        this.creationTimeStamp = timeStamp;
+    }
+
+    public void setCreationFee(Long creationFee) {
+        this.creationFee = creationFee;
     }
 }

@@ -44,4 +44,8 @@ public class LocalFileJsonProvider implements JsonProvider {
     public ArrayList<String> getLines() {
         return null;
     }
+
+    @Override
+    public void resetLines() {
+    }
 }

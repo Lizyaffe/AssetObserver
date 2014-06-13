@@ -31,7 +31,7 @@ public class GetAllAssets extends APIRequestHandler {
         allAssets.put("nxtVolume", String.format("%.2f", nxtVolume));
         allAssets.put("usdVolume", String.format("%.2f", nxtVolume * AssetObserver.nxtUsdPrice));
         allAssets.put("btcVolume", String.format("%.2f", nxtVolume * AssetObserver.nxtBtcPrice));
-        allAssets.put("updateTime", String.format("%s", new Date(assetObserver.getCacheModificationTime())));
+        allAssets.put("updateTime", String.format("%s", new Date(assetObserver.getUpdateTime())));
         response.add(allAssets);
         response.add(map);
         return JSONValue.toJSONString(response);

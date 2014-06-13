@@ -11,6 +11,8 @@ import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 public class ServerWrapper {
 
+    private APIServlet apiServlet;
+
     public void start(AssetObserver assetObserver) {
         final int port = PropertiesStorage.getIntProperty("ServerPort");
         final String host = PropertiesStorage.getStringProperty("ServerHost");
@@ -61,7 +63,9 @@ public class ServerWrapper {
 //        servletContext.setErrorHandler(errorHandler);
 
 //        servletContext.setAllowNullPathInfo(true);
-        ServletHolder apiServletHolder = new ServletHolder(new APIServlet(assetObserver));
+        apiServlet = new APIServlet();
+        apiServlet.setAssetObserver(assetObserver);
+        ServletHolder apiServletHolder = new ServletHolder(apiServlet);
         servletContext.addServlet(apiServletHolder, "/api/*");
 
 //        if (PropertiesStorage.getBooleanProperty("apiServerCORS")) {
@@ -91,4 +95,7 @@ public class ServerWrapper {
         new Thread(r).start();
     }
 
+    public void setAssetObserver(AssetObserver assetObserver) {
+        apiServlet.setAssetObserver(assetObserver);
+    }
 }

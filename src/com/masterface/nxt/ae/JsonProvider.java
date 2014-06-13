@@ -12,4 +12,6 @@ public interface JsonProvider {
     public JSONObject getJsonResponse(Map<String, String> params);
 
     ArrayList<String> getLines();
+
+    void resetLines();
 }

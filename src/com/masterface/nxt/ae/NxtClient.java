@@ -17,7 +17,7 @@ import java.util.Map;
 public class NxtClient implements JsonProvider {
 
     HttpClient client;
-    ArrayList<String> lines = new ArrayList<>();
+    ArrayList<String> lines;
 
     public NxtClient() {
         this.client = HttpClientBuilder.create().build();
@@ -44,6 +44,9 @@ public class NxtClient implements JsonProvider {
             throw new IllegalStateException(e);
         }
         if (isLogRequests && response != null) {
+            if (lines == null) {
+                lines = new ArrayList<>();
+            }
             lines.add(urlParams);
             lines.add(response.toJSONString());
         }
@@ -52,5 +55,10 @@ public class NxtClient implements JsonProvider {
 
     public ArrayList<String> getLines() {
         return lines;
+    }
+
+    @Override
+    public void resetLines() {
+        lines = null;
     }
 }
