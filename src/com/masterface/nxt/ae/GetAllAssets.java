@@ -18,7 +18,7 @@ public class GetAllAssets extends APIRequestHandler {
         long nofTrades = 0;
         double nxtVolume = 0;
         for (Asset asset : assetsList) {
-            Map<String, Object> data = asset.getData();
+            Map<String, Object> data = asset.getData(assetObserver.getExchangeRates());
             map.put(asset.getName(), data);
             count++;
             nofTrades += Long.parseLong((String) data.get("nofTrades"));
@@ -29,8 +29,8 @@ public class GetAllAssets extends APIRequestHandler {
         allAssets.put("assetCount", String.format("%d", count));
         allAssets.put("nofTrades", String.format("%d", nofTrades));
         allAssets.put("nxtVolume", String.format("%.2f", nxtVolume));
-        allAssets.put("usdVolume", String.format("%.2f", nxtVolume * AssetObserver.nxtUsdPrice));
-        allAssets.put("btcVolume", String.format("%.2f", nxtVolume * AssetObserver.nxtBtcPrice));
+        allAssets.put("usdVolume", String.format("%.2f", nxtVolume * assetObserver.getExchangeRates().get(AssetObserver.NXT_USD)));
+        allAssets.put("btcVolume", String.format("%.2f", nxtVolume * assetObserver.getExchangeRates().get(AssetObserver.NXT_BTC)));
         allAssets.put("updateTime", String.format("%s", new Date(assetObserver.getUpdateTime())));
         response.add(allAssets);
         response.add(map);

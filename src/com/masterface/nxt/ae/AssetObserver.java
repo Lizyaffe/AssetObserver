@@ -28,12 +28,14 @@ public class AssetObserver {
 
     public static Logger log;
 
-    public static BterApi bterApi;
-    public static double nxtBtcPrice;
-    public static double nxtUsdPrice;
-    public static double nxtCnyPrice;
+    public static String NXT_BTC = "NXT_BTC";
+
+    public static String BTC_USD = "BTC_USD";
+    public static String NXT_USD = "NXT_USD";
+    public static String NXT_CNY = "NXT_CNY";
 
     private Map<String, Asset> assets;
+    private Map<String, Double> exchangeRates = new HashMap<>();
     private long updateTime;
 
     static {
@@ -48,14 +50,15 @@ public class AssetObserver {
     }
 
     public static void main(String[] args) {
-        readExchangeRates();
         AssetObserver assetObserver = new AssetObserver();
+        assetObserver.updateExchangeRates();
         assetObserver.loadCache();
         JsonProvider jsonProvider = JsonProviderFactory.getJsonProvider(null);
         ServerWrapper serverWrapper = new ServerWrapper();
         Runnable r = () -> {
             try {
                 AssetObserver online = new AssetObserver();
+                online.updateExchangeRates();
                 online.updateTime = System.currentTimeMillis();
                 online.load(jsonProvider);
                 serverWrapper.setAssetObserver(online);
@@ -68,15 +71,15 @@ public class AssetObserver {
         serverWrapper.start(assetObserver);
     }
 
-    private static void readExchangeRates() {
+    private void updateExchangeRates() {
         BterClient bterClient = new BterClient();
-        bterApi = new BterApi(bterClient);
-        nxtBtcPrice = bterApi.getLastPrice("NXT", "BTC");
-        nxtCnyPrice = bterApi.getLastPrice("NXT", "CNY");
+        BterApi bterApi = new BterApi(bterClient);
+        exchangeRates.put(NXT_BTC, bterApi.getLastPrice("NXT", "BTC"));
+        exchangeRates.put(NXT_CNY, bterApi.getLastPrice("NXT", "CNY"));
         BitstampClient bitstampClient = new BitstampClient();
         BitstampApi bitstampApi = new BitstampApi(bitstampClient);
-        double btcUsdPrice = bitstampApi.getBtcUsdLastPrice();
-        nxtUsdPrice = nxtBtcPrice * btcUsdPrice;
+        exchangeRates.put(BTC_USD, bitstampApi.getBtcUsdLastPrice());
+        exchangeRates.put(NXT_USD, exchangeRates.get(NXT_BTC) * exchangeRates.get(BTC_USD));
     }
 
     private void loadCache() {
@@ -147,7 +150,7 @@ public class AssetObserver {
         }
         List<Tuple3> assetCreation = blockchainData.getAssetCreation();
         for (Tuple3 assetExtraData : assetCreation) {
-            Asset asset = assets.get((String) assetExtraData.x);
+            @SuppressWarnings("RedundantCast") Asset asset = assets.get((String) assetExtraData.x);
             asset.setTimeStamp((Integer) assetExtraData.y);
             asset.setCreationFee((Long) assetExtraData.z);
         }
@@ -233,5 +236,9 @@ public class AssetObserver {
 
     public long getUpdateTime() {
         return updateTime;
+    }
+
+    public Map<String, Double> getExchangeRates() {
+        return exchangeRates;
     }
 }

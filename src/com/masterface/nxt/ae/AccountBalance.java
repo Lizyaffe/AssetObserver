@@ -116,14 +116,14 @@ class AccountBalance implements Comparable<AccountBalance> {
         return fees;
     }
 
-    public Map<String, Object> getData() {
+    public Map<String, Object> getData(Map<String, Double> exchangeRates) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("qty", String.format("%." + asset.getDecimals() + "f", getQuantity()));
         map.put("isIssuer", String.format("%b", isIssuer()));
         double nxtValue = getQuantity() * asset.getLastPrice();
         map.put("nxtValue", String.format("%.2f", nxtValue));
-        map.put("usdValue", String.format("%.2f", nxtValue * AssetObserver.nxtUsdPrice));
-        map.put("btcValue", String.format("%.2f", nxtValue * AssetObserver.nxtBtcPrice));
+        map.put("usdValue", String.format("%.2f", nxtValue * exchangeRates.get(AssetObserver.NXT_USD)));
+        map.put("btcValue", String.format("%.2f", nxtValue * exchangeRates.get(AssetObserver.NXT_BTC)));
         map.put("buyQty", String.format("%." + asset.getDecimals() + "f", getQty(AccountTransfer.Type.INCOMING, true)));
         map.put("sellQty", String.format("%." + asset.getDecimals() + "f", getQty(AccountTransfer.Type.OUTGOING, true)));
         map.put("receiveQty", String.format("%." + asset.getDecimals() + "f", getQty(AccountTransfer.Type.INCOMING, false)));

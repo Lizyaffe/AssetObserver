@@ -191,18 +191,18 @@ class Asset {
         return payments;
     }
 
-    public Map<String, Object> getData() {
+    public Map<String, Object> getData(Map<String, Double> exchangeRates) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("name", name);
         map.put("qty", String.format("%." + getDecimals() + "f", getQuantity()));
         map.put("issuedQty", String.format("%." + getDecimals() + "f", getQuantity() - getIssuerAccount().getQuantity()));
         map.put("nxtPrice", String.format("%.2f", getLastPrice()));
         map.put("nxtValue", String.format("%d", getAssetValue()));
-        map.put("usdValue", String.format("%.2f", getAssetValue() * AssetObserver.nxtUsdPrice));
+        map.put("usdValue", String.format("%.2f", getAssetValue() * exchangeRates.get(AssetObserver.NXT_USD)));
         map.put("nofTrades", String.format("%d", getNumberOfTrades()));
         double tradeVolume = getTradeVolume();
         map.put("nxtVolume", String.format("%d", Math.round(tradeVolume)));
-        map.put("usdVolume", String.format("%d", Math.round(tradeVolume * AssetObserver.nxtUsdPrice)));
+        map.put("usdVolume", String.format("%d", Math.round(tradeVolume * exchangeRates.get(AssetObserver.NXT_USD))));
         map.put("creationTime", String.format("%s", Utils.fromEpochTime(creationTimeStamp)));
         map.put("creationFee", String.format("%d", creationFee / AssetObserver.NQT_IN_NXT));
         map.put("id", assetId);

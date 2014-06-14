@@ -15,8 +15,8 @@ public class GetAssetDistribution extends APIRequestHandler {
     @Override
     String processRequest(AssetObserver assetObserver, HttpServletRequest req) {
         String assetId = req.getParameter("assetId");
-        if (assetId == null) {
-            return "Please specify the \"assetId\" parameter";
+        if (assetId == null || assetId.equals("")) {
+            return generateErrorResponse("Missing parameter %s", "assetId");
         }
         boolean ignoreIssuerAccount = Boolean.parseBoolean(req.getParameter("ignoreIssuerAccount"));
         String balanceDate = req.getParameter("balanceDate");
@@ -34,6 +34,9 @@ public class GetAssetDistribution extends APIRequestHandler {
             }
         }
         Asset asset = assetObserver.getAsset(assetId);
+        if (asset == null) {
+            return generateErrorResponse("Asset id %s not found", assetId);
+        }
         List<AccountBalance> accountBalances = asset.getAccountBalancesList();
         Collections.sort(accountBalances, Collections.reverseOrder(new AccountQuantityComparator()));
         Map<String, Object> map = new LinkedHashMap<>();

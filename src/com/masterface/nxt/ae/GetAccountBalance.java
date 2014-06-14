@@ -13,9 +13,14 @@ public class GetAccountBalance extends APIRequestHandler {
     String processRequest(AssetObserver assetObserver, HttpServletRequest req) {
         String accountIdParam = req.getParameter("accountId");
         if (accountIdParam == null || accountIdParam.equals("")) {
-            return "Please specify the \"accountId\" parameter";
+            return generateErrorResponse("Missing parameter %s", "accountId");
         }
-        String accountId = Utils.toUnsignedLong(Utils.parseAccountId(accountIdParam));
+        String accountId;
+        try {
+            accountId = Utils.toUnsignedLong(Utils.parseAccountId(accountIdParam));
+        } catch (RuntimeException e) {
+            return generateErrorResponse("Invalid account id %s", accountIdParam);
+        }
         List<Asset> assetsList = assetObserver.getAllAssets();
         Map<String, Map<String, Object>> map = new LinkedHashMap<>();
         double value = 0;
@@ -26,7 +31,7 @@ public class GetAccountBalance extends APIRequestHandler {
                 // Account does not hold this asset
                 continue;
             }
-            Map<String, Object> data = accountBalance.getData();
+            Map<String, Object> data = accountBalance.getData(assetObserver.getExchangeRates());
             map.put(asset.getName(), data);
             value += Double.parseDouble((String) data.get("nxtValue"));
             fees += Long.parseLong((String) data.get("fees"));
@@ -35,8 +40,8 @@ public class GetAccountBalance extends APIRequestHandler {
         Map<String, String> accountDetails = new LinkedHashMap<>();
         accountDetails.put("accountId", accountIdParam);
         accountDetails.put("nxtValue", String.format("%.2f", value));
-        accountDetails.put("usdValue", String.format("%.2f", value * AssetObserver.nxtUsdPrice));
-        accountDetails.put("btcValue", String.format("%.2f", value * AssetObserver.nxtBtcPrice));
+        accountDetails.put("usdValue", String.format("%.2f", value * assetObserver.getExchangeRates().get(AssetObserver.NXT_USD)));
+        accountDetails.put("btcValue", String.format("%.2f", value * assetObserver.getExchangeRates().get(AssetObserver.NXT_BTC)));
         accountDetails.put("nxtFees", String.format("%d", fees));
         accountDetails.put("updateTime", String.format("%s", new Date(assetObserver.getUpdateTime())));
         response.add(accountDetails);
