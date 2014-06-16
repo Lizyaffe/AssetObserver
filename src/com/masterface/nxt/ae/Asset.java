@@ -87,16 +87,19 @@ class Asset {
     }
 
     public void setAccountBalanceDistribution() {
-        accountBalancesMap.put(accountId, new AccountBalance(accountId, this, quantityQNT, true));
+        accountBalancesMap.put(accountId, new AccountBalance(accountId, this, quantityQNT));
         for (Transfer transfer : transfers) {
             String senderId = transfer.getSenderAccount();
             AccountBalance sender = accountBalancesMap.get(senderId);
+            if (sender == null) {
+                sender = new AccountBalance(senderId, this, 0);
+            }
             sender.send(transfer);
 
             String recipientId = transfer.getRecipientAccount();
             AccountBalance recipient = accountBalancesMap.get(recipientId);
             if (recipient == null) {
-                recipient = new AccountBalance(recipientId, this, 0, false);
+                recipient = new AccountBalance(recipientId, this, 0);
                 accountBalancesMap.put(recipientId, recipient);
             }
             recipient.receive(transfer);
@@ -204,6 +207,7 @@ class Asset {
         map.put("usdVolume", String.format("%d", Math.round(tradeVolume * exchangeRates.get(AssetObserver.NXT_USD))));
         map.put("creationTime", String.format("%s", Utils.fromEpochTime(creationTimeStamp)));
         map.put("creationFee", String.format("%d", creationFee / AssetObserver.NQT_IN_NXT));
+        map.put("decimals", String.format("%d", decimals));
         map.put("id", assetId);
         return map;
     }

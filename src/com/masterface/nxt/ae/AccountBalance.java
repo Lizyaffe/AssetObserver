@@ -8,17 +8,15 @@ import java.util.Map;
 class AccountBalance implements Comparable<AccountBalance> {
     private final String accountId;
     private final Asset asset;
-    private final boolean isIssuer;
     private long quantityQNT;
     private long fees;
     private List<AccountTransfer> transfers;
 
-    AccountBalance(String accountId, Asset asset, long quantityQNT, boolean isIssuer) {
+    AccountBalance(String accountId, Asset asset, long quantityQNT) {
         this.accountId = accountId;
         this.asset = asset;
         this.quantityQNT = quantityQNT;
-        this.isIssuer = isIssuer;
-        if (isIssuer) {
+        if (isIssuer()) {
             fees += 1000;
         }
         this.transfers = new ArrayList<>();
@@ -46,7 +44,7 @@ class AccountBalance implements Comparable<AccountBalance> {
 
     public double getQuantity(int timeStamp) {
         double quantity = 0;
-        if (isIssuer) {
+        if (isIssuer()) {
             quantity += asset.getQuantity();
         }
         for (AccountTransfer accountTransfer : transfers) {
@@ -109,7 +107,7 @@ class AccountBalance implements Comparable<AccountBalance> {
     }
 
     public boolean isIssuer() {
-        return isIssuer;
+        return accountId.equals(asset.getAccountId());
     }
 
     public long getFees() {
@@ -135,14 +133,14 @@ class AccountBalance implements Comparable<AccountBalance> {
 
     public Map<String, Object> getDistributionData(int timeStamp, boolean ignoreIssuerAccount) {
         Map<String, Object> map = new LinkedHashMap<>();
-        if (ignoreIssuerAccount && isIssuer) {
+        if (ignoreIssuerAccount && isIssuer()) {
             return null;
         }
         double quantity = getQuantity();
         if (timeStamp > 0) {
             quantity = getQuantity(timeStamp);
         }
-        if (!isIssuer && Math.abs(quantity) < 1 / (double) AssetObserver.MULTIPLIERS[(int) asset.getDecimals()] / 2) {
+        if (!isIssuer() && Math.abs(quantity) < 1 / (double) AssetObserver.MULTIPLIERS[(int) asset.getDecimals()] / 2) {
             return null;
         }
         map.put("qty", String.format("%." + asset.getDecimals() + "f", quantity));

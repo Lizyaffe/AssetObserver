@@ -23,7 +23,7 @@ public class GetAssetMovements extends APIRequestHandler {
         boolean showTrades = (type == null || type.equals("") || type.equalsIgnoreCase("trade"));
         boolean showTransfers = (type == null || type.equals("") || type.equalsIgnoreCase("transfer"));
         List<Transfer> assetTransfers = asset.getTransfers();
-        Collections.sort(assetTransfers, Collections.reverseOrder(new AssetQuantityComparator()));
+        Collections.sort(assetTransfers, Collections.reverseOrder(new TransferTimeStampComparator()));
         List<Object> list = new ArrayList<>();
         double tradeQty = 0;
         double transferQty = 0;
@@ -63,12 +63,12 @@ public class GetAssetMovements extends APIRequestHandler {
         return JSONValue.toJSONString(response);
     }
 
-    static class AssetQuantityComparator implements Comparator<Transfer> {
+    static class TransferTimeStampComparator implements Comparator<Transfer> {
 
         @Override
         public int compare(Transfer t1, Transfer t2) {
-            double qty1 = t1.getQuantityQNT();
-            double qty2 = t2.getQuantityQNT();
+            long qty1 = t1.getTimestamp();
+            long qty2 = t2.getTimestamp();
             if (qty1 < qty2) {
                 return -1;
             }

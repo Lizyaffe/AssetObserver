@@ -52,8 +52,8 @@ public class AssetObserver {
 
     public static void main(String[] args) {
         AssetObserver assetObserver = new AssetObserver();
-        assetObserver.updateExchangeRates();
         assetObserver.loadCache();
+        assetObserver.updateExchangeRates();
         final JsonProvider jsonProvider = JsonProviderFactory.getJsonProvider(null);
         final ServerWrapper serverWrapper = new ServerWrapper();
         Runnable r = new Runnable() {
@@ -61,9 +61,9 @@ public class AssetObserver {
             public void run() {
                 try {
                     AssetObserver online = new AssetObserver();
+                    online.load(jsonProvider);
                     online.updateExchangeRates();
                     online.updateTime = System.currentTimeMillis();
-                    online.load(jsonProvider);
                     serverWrapper.setAssetObserver(online);
                 } catch (Throwable t) {
                     t.printStackTrace();
@@ -120,11 +120,6 @@ public class AssetObserver {
                 asset.sortTransfers();
                 asset.setLastPrice();
                 asset.setAccountBalanceDistribution();
-
-                if (log.isLoggable(Level.FINE)) {
-                    log.info(String.format("Asset %s quantity %.2f price %f value %d\n",
-                            asset.getName(), asset.getQuantity(), asset.getLastPrice(), asset.getAssetValue()));
-                }
                 asset.verifyAccountBalances();
             }
             if (log.isLoggable(Level.INFO)) {
@@ -174,9 +169,15 @@ public class AssetObserver {
             if (log.isLoggable(Level.FINE)) {
                 log.info("Bid " + bidTransaction);
             }
-            if (!((Long) bidTransaction.get("type") == COLORED_COINS) || !((Long) bidTransaction.get("subtype") == COLORED_COINS_BID)) {
+            Object bidTypeObj = bidTransaction.get("type");
+            Object bidSubtypeObj = bidTransaction.get("subtype");
+            if (bidTypeObj == null || bidSubtypeObj == null) {
+                log.info(String.format("Cannot determine bid order type for trade " + trade));
+                continue;
+            }
+            if (!((Long) bidTypeObj == COLORED_COINS) || !((Long) bidSubtypeObj == COLORED_COINS_BID)) {
                 throw new IllegalStateException(String.format("Bid transaction type %s subtype %s",
-                        bidTransaction.get("type"), bidTransaction.get("subtype")));
+                        bidTypeObj, bidTransaction.get("subtype")));
             }
             trade.setRecipientAccount((String) bidTransaction.get("sender"));
 
@@ -189,7 +190,13 @@ public class AssetObserver {
             if (log.isLoggable(Level.FINE)) {
                 log.info("Ask " + askTransaction);
             }
-            if (!((Long) askTransaction.get("type") == COLORED_COINS) || !((Long) askTransaction.get("subtype") == COLORED_COINS_ASK)) {
+            Object askTypeObj = askTransaction.get("type");
+            Object askSubtypeObj = askTransaction.get("subtype");
+            if (askTypeObj == null || askSubtypeObj == null) {
+                log.info(String.format("Cannot determine ask order type for trade " + trade));
+                continue;
+            }
+            if (!((Long) askTypeObj == COLORED_COINS) || !((Long) askSubtypeObj == COLORED_COINS_ASK)) {
                 throw new IllegalStateException(String.format("Ask transaction type %s subtype %s",
                         askTransaction.get("type"), askTransaction.get("subtype")));
             }

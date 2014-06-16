@@ -35,10 +35,15 @@ public class APIServlet extends HttpServlet {
         map.put("getAccountBalance", GetAccountBalance.instance);
         map.put("getAssetDistribution", GetAssetDistribution.instance);
         map.put("getAssetMovements", GetAssetMovements.instance);
+        map.put("getStatus", GetStatus.instance);
         apiRequestHandlers = Collections.unmodifiableMap(map);
     }
 
     private volatile AssetObserver assetObserver;
+
+    public APIServlet(AssetObserver assetObserver) {
+        setAssetObserver(assetObserver);
+    }
 
     public void setAssetObserver(AssetObserver assetObserver) {
         this.assetObserver = assetObserver;

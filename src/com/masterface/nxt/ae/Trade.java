@@ -2,6 +2,8 @@ package com.masterface.nxt.ae;
 
 import org.json.simple.JSONObject;
 
+import java.util.Map;
+
 class Trade extends Transfer {
     private final Long priceNQT;
     private final String askOrder;
@@ -39,5 +41,16 @@ class Trade extends Transfer {
                 ", askOrder=" + askOrder +
                 ", bidOrder=" + bidOrder +
                 '}';
+    }
+
+    @Override
+    public Map<String, Object> getData(Asset asset) {
+        Map<String, Object> map = super.getData(asset);
+        double price = (double) getPriceNQT() / AssetObserver.NQT_IN_NXT;
+        map.put("price", String.format("%.8f", price));
+        double qty = getQuantityQNT() / (double) AssetObserver.MULTIPLIERS[(int) asset.getDecimals()];
+        double nxtValue = qty * price;
+        map.put("nxtValue", String.format("%.2f", nxtValue));
+        return map;
     }
 }

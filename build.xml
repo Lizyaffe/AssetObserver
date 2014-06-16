@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<project name="BuildAssetObserver" default="package">
+	<description>Build Asset Observer</description>
+	<target name="package">
+		<jar destfile="app.jar" basedir="out/production/asset"/>
+		<copy todir="dist/lib">
+            <fileset dir="lib"/>
+		</copy>
+		<copy todir="dist/conf">
+            <fileset dir="conf"/>
+		</copy>
+		<copy todir="dist/conf">
+            <fileset dir="conf"/>
+		</copy>
+        <copy file="app.jar" todir="dist"/>
+        <copy file="index.html" todir="dist"/>
+        <copy file="run.bat" todir="dist"/>
+        <copy file="run.sh" todir="dist"/>
+        <zip destfile="package.zip" basedir="dist"/>
+	</target>
+</project>
