@@ -13,6 +13,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
@@ -38,8 +39,13 @@ public class BterClient {
             ArrayList<String> lines = new ArrayList<>();
             lines.add(urlParams);
             lines.add(response.toJSONString());
+
             try {
-                Files.write(Paths.get(JsonProvider.JSON_RESPONSE_JOURNAL + ".log"), lines, Charset.forName("UTF-8"), StandardOpenOption.APPEND);
+                Path path = Paths.get(JsonProvider.EXCHANGE_RATES_LOG);
+                if (!Files.exists(path)) {
+                    Files.createFile(path);
+                }
+                Files.write(path, lines, Charset.forName("UTF-8"), StandardOpenOption.APPEND);
             } catch (IOException e) {
                 throw new IllegalStateException(e);
             }

@@ -72,19 +72,35 @@ public class NxtApi {
         List<Tuple3> assetCreation = new ArrayList<>();
         while (true) {
             JSONObject block = getBlock(blockId);
-            long height = (Long) block.get("height");
-            if (height < AssetObserver.ASSET_EXCHANGE_BLOCK) {
+            if (block == null) {
+                AssetObserver.log.info("Can't getBlock for blockId " + blockId);
                 break;
             }
+            Object heightObj = block.get("height");
+            if (heightObj != null) {
+                long height = (Long) heightObj;
+                if (height < AssetObserver.ASSET_EXCHANGE_BLOCK) {
+                    break;
+                }
+            }
             JSONArray blockTransactions = getBlockTransactions(blockId);
+            if (blockTransactions == null) {
+                AssetObserver.log.info("Can't get block transactions for blockId " + blockId);
+                break;
+            }
             for (Object transactionObj : blockTransactions) {
                 String transactionId = (String) transactionObj;
                 JSONObject transaction = getTransaction(transactionId);
+                if (transaction == null) {
+                    AssetObserver.log.info("Can't get transaction for transactionId " + transactionId);
+                    break;
+                }
                 if ((Long) transaction.get("type") != 2) {
                     continue;
                 }
                 if ((Long) transaction.get("subtype") == 0) {
                     String assetId = (String) transaction.get("transaction");
+                    //noinspection RedundantCast
                     Integer timeStamp = Integer.parseInt(((Long) transaction.get("timestamp")).toString());
                     long feeNQT = Long.parseLong((String) transaction.get("feeNQT"));
                     Tuple3<String, Integer, Long> assetInfo = new Tuple3<>(assetId, timeStamp, feeNQT);

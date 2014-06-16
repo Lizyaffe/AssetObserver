@@ -34,6 +34,7 @@ public class APIServlet extends HttpServlet {
         map.put("getAllAssets", GetAllAssets.instance);
         map.put("getAccountBalance", GetAccountBalance.instance);
         map.put("getAssetDistribution", GetAssetDistribution.instance);
+        map.put("getAssetMovements", GetAssetMovements.instance);
         apiRequestHandlers = Collections.unmodifiableMap(map);
     }
 

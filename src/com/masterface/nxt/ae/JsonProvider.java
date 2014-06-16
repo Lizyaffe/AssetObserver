@@ -7,7 +7,7 @@ import java.util.Map;
 
 public interface JsonProvider {
 
-    public static final String JSON_RESPONSE_JOURNAL = "JsonResponseJournal";
+    public static final String EXCHANGE_RATES_LOG = "exchangeRates.log";
 
     public JSONObject getJsonResponse(Map<String, String> params);
 

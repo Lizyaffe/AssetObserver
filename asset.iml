@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module type="JAVA_MODULE" version="4">
-  <component name="NewModuleRootManager" inherit-compiler-output="false">
-    <output url="file://$MODULE_DIR$/out/production/asset" />
-    <output-test url="file://$MODULE_DIR$/out/test/asset" />
-    <exclude-output />
+  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_7" inherit-compiler-output="true">
     <content url="file://$MODULE_DIR$/src">
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
     </content>
@@ -13,7 +10,7 @@
     <content url="file://$MODULE_DIR$/test.resources">
       <sourceFolder url="file://$MODULE_DIR$/test.resources" type="java-test-resource" />
     </content>
-    <orderEntry type="inheritedJdk" />
+    <orderEntry type="jdk" jdkName="1.7" jdkType="JavaSDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module-library" scope="TEST">
       <library name="JUnit4">
@@ -174,6 +171,15 @@
       <library>
         <CLASSES>
           <root url="jar://$MODULE_DIR$/lib/servlet-api-3.1.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" scope="RUNTIME">
+      <library>
+        <CLASSES>
+          <root url="file://$MODULE_DIR$/conf" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />

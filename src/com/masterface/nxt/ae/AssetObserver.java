@@ -46,6 +46,7 @@ public class AssetObserver {
         if (log.isLoggable(Level.INFO)) {
             log.info("Loading started");
         }
+        log.info("Java classpath = " + System.getProperty("java.class.path"));
         Thread.setDefaultUncaughtExceptionHandler(new ExceptionHandler());
     }
 
@@ -53,17 +54,20 @@ public class AssetObserver {
         AssetObserver assetObserver = new AssetObserver();
         assetObserver.updateExchangeRates();
         assetObserver.loadCache();
-        JsonProvider jsonProvider = JsonProviderFactory.getJsonProvider(null);
-        ServerWrapper serverWrapper = new ServerWrapper();
-        Runnable r = () -> {
-            try {
-                AssetObserver online = new AssetObserver();
-                online.updateExchangeRates();
-                online.updateTime = System.currentTimeMillis();
-                online.load(jsonProvider);
-                serverWrapper.setAssetObserver(online);
-            } catch (Throwable t) {
-                t.printStackTrace();
+        final JsonProvider jsonProvider = JsonProviderFactory.getJsonProvider(null);
+        final ServerWrapper serverWrapper = new ServerWrapper();
+        Runnable r = new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    AssetObserver online = new AssetObserver();
+                    online.updateExchangeRates();
+                    online.updateTime = System.currentTimeMillis();
+                    online.load(jsonProvider);
+                    serverWrapper.setAssetObserver(online);
+                } catch (Throwable t) {
+                    t.printStackTrace();
+                }
             }
         };
         ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
@@ -108,24 +112,24 @@ public class AssetObserver {
 
     public Map<String, Asset> load(JsonProvider jsonProvider) {
         NxtApi nxtAPi = new NxtApi(jsonProvider);
-        assets = nxtAPi.getAllAssets();
-        loadTrades(nxtAPi);
-        loadTransfers(nxtAPi);
-        for (Asset asset : assets.values()) {
-            asset.sortTransfers();
-            asset.setLastPrice();
-            asset.setAccountBalanceDistribution();
-
-            if (log.isLoggable(Level.FINE)) {
-                log.info(String.format("Asset %s quantity %.2f price %f value %d\n",
-                        asset.getName(), asset.getQuantity(), asset.getLastPrice(), asset.getAssetValue()));
-            }
-            asset.verifyAccountBalances();
-        }
-        if (log.isLoggable(Level.INFO)) {
-            log.info("Account analysis done");
-        }
         try {
+            assets = nxtAPi.getAllAssets();
+            loadTrades(nxtAPi);
+            loadTransfers(nxtAPi);
+            for (Asset asset : assets.values()) {
+                asset.sortTransfers();
+                asset.setLastPrice();
+                asset.setAccountBalanceDistribution();
+
+                if (log.isLoggable(Level.FINE)) {
+                    log.info(String.format("Asset %s quantity %.2f price %f value %d\n",
+                            asset.getName(), asset.getQuantity(), asset.getLastPrice(), asset.getAssetValue()));
+                }
+                asset.verifyAccountBalances();
+            }
+            if (log.isLoggable(Level.INFO)) {
+                log.info("Account analysis done");
+            }
             ArrayList<String> lines = nxtAPi.getLines();
             if (lines != null) {
                 Path path = Paths.get(CACHE_LOG);
@@ -163,20 +167,31 @@ public class AssetObserver {
         List<Trade> trades = nxtAPi.getAllTrades();
         for (Trade trade : trades) {
             JSONObject bidTransaction = nxtAPi.getTransaction(trade.getBidOrderId());
+            if (bidTransaction == null) {
+                log.info(String.format("Cannot find bid order transaction for trade " + trade));
+                continue;
+            }
             if (log.isLoggable(Level.FINE)) {
-                log.info("Bid:" + bidTransaction);
+                log.info("Bid " + bidTransaction);
             }
             if (!((Long) bidTransaction.get("type") == COLORED_COINS) || !((Long) bidTransaction.get("subtype") == COLORED_COINS_BID)) {
-                throw new IllegalStateException();
+                throw new IllegalStateException(String.format("Bid transaction type %s subtype %s",
+                        bidTransaction.get("type"), bidTransaction.get("subtype")));
             }
             trade.setRecipientAccount((String) bidTransaction.get("sender"));
 
             JSONObject askTransaction = nxtAPi.getTransaction(trade.getAskOrderId());
+            if (askTransaction == null) {
+                log.info(String.format("Cannot find ask order transaction for trade " + trade));
+                continue;
+            }
+
             if (log.isLoggable(Level.FINE)) {
-                log.info("Ask:" + askTransaction);
+                log.info("Ask " + askTransaction);
             }
             if (!((Long) askTransaction.get("type") == COLORED_COINS) || !((Long) askTransaction.get("subtype") == COLORED_COINS_ASK)) {
-                throw new IllegalStateException();
+                throw new IllegalStateException(String.format("Ask transaction type %s subtype %s",
+                        askTransaction.get("type"), askTransaction.get("subtype")));
             }
             trade.setSenderAccount((String) askTransaction.get("sender"));
 

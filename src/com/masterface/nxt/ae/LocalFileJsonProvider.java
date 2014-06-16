@@ -5,6 +5,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -24,7 +25,7 @@ public class LocalFileJsonProvider implements JsonProvider {
     public JSONObject getJsonResponse(Map<String, String> params) {
         if (iterator == null) {
             try {
-                iterator = Files.readAllLines(testResource).iterator();
+                iterator = Files.readAllLines(testResource, Charset.forName("utf8")).iterator();
             } catch (IOException e) {
                 throw new IllegalStateException(e);
             }
@@ -37,7 +38,7 @@ public class LocalFileJsonProvider implements JsonProvider {
         if (!urlParams.equals(expectedUrlParams)) {
             throw new IllegalStateException(String.format("Unexpected request %s was expecting %s", urlParams, expectedUrlParams));
         }
-        return (JSONObject)JSONValue.parse(iterator.next());
+        return (JSONObject) JSONValue.parse(iterator.next());
     }
 
     @Override

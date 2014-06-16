@@ -1,10 +1,7 @@
 package com.masterface.nxt.ae;
 
 import org.eclipse.jetty.server.*;
-import org.eclipse.jetty.server.handler.ContextHandlerCollection;
-import org.eclipse.jetty.server.handler.DefaultHandler;
-import org.eclipse.jetty.server.handler.HandlerList;
-import org.eclipse.jetty.server.handler.ResourceHandler;
+import org.eclipse.jetty.server.handler.*;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
@@ -16,7 +13,7 @@ public class ServerWrapper {
     public void start(AssetObserver assetObserver) {
         final int port = PropertiesStorage.getIntProperty("ServerPort");
         final String host = PropertiesStorage.getStringProperty("ServerHost");
-        Server apiServer = new Server();
+        final Server apiServer = new Server();
         ServerConnector connector;
 
         boolean enableSSL = PropertiesStorage.getBooleanProperty("apiSSL");
@@ -54,43 +51,44 @@ public class ServerWrapper {
             apiHandlers.addHandler(apiFileHandler);
         }
 
-//        ServletHandler apiHandler = new ServletHandler();
         ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
         ServletContextHandler servletContext = new ServletContextHandler(contextHandlerCollection, "/*", ServletContextHandler.SESSIONS);
 
-        // set custom error handler
-//        ErrorHandler errorHandler = new ErrorHandler();
-//        servletContext.setErrorHandler(errorHandler);
-
-//        servletContext.setAllowNullPathInfo(true);
         apiServlet = new APIServlet();
         apiServlet.setAssetObserver(assetObserver);
         ServletHolder apiServletHolder = new ServletHolder(apiServlet);
         servletContext.addServlet(apiServletHolder, "/api/*");
 
-//        if (PropertiesStorage.getBooleanProperty("apiServerCORS")) {
-//            FilterHolder filterHolder = apiHandler.addFilterWithMapping(CrossOriginFilter.class, "/*", FilterMapping.DEFAULT);
-//            filterHolder.setInitParameter("allowedHeaders", "*");
-//            filterHolder.setAsyncSupported(true);
-//        }
-//
-//        apiHandlers.addHandler(apiHandler);
         apiHandlers.addHandler(servletContext);
-//        apiHandlers.addHandler(contextHandlerCollection);
+
+        NCSARequestLog requestLog = new NCSARequestLog("access_yyyy_mm_dd.log");
+        int days = 14;
+        requestLog.setRetainDays(days);
+        requestLog.setAppend(true);
+        requestLog.setExtended(true);
+        requestLog.setLogCookies(true);
+        requestLog.setLogServer(true);
+        requestLog.setLogLatency(true);
+        requestLog.setPreferProxiedForAddress(true);
+        requestLog.setLogTimeZone(System.getProperty("user.timezone"));
+        RequestLogHandler requestLogHandler = new RequestLogHandler();
+        requestLogHandler.setRequestLog(requestLog);
+        apiHandlers.addHandler(requestLogHandler);
         apiHandlers.addHandler(new DefaultHandler());
 
         apiServer.setHandler(apiHandlers);
         apiServer.setStopAtShutdown(true);
 
-        Runnable r = () -> {
-            try {
-                apiServer.start();
-                AssetObserver.log.info("Started API server at " + host + ":" + port);
-            } catch (Exception e) {
-                AssetObserver.log.info("Failed to start API server");
-                throw new RuntimeException(e.toString(), e);
+        Runnable r = new Runnable() {
+            public void run() {
+                try {
+                    apiServer.start();
+                    AssetObserver.log.info("API server started listening on " + host + ":" + port);
+                } catch (Exception e) {
+                    AssetObserver.log.info("Failed to start API server");
+                    throw new RuntimeException(e.toString(), e);
+                }
             }
-
         };
         new Thread(r).start();
     }

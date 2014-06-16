@@ -3,7 +3,6 @@ package com.masterface.nxt.ae;
 import org.json.simple.JSONObject;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 class Asset {
     private final String assetId;
@@ -102,7 +101,7 @@ class Asset {
             }
             recipient.receive(transfer);
         }
-        accountBalancesList.addAll(accountBalancesMap.values().stream().collect(Collectors.toList()));
+        accountBalancesList.addAll(accountBalancesMap.values());
         Collections.sort(accountBalancesList);
     }
 
@@ -226,5 +225,9 @@ class Asset {
 
     public void setCreationFee(Long creationFee) {
         this.creationFee = creationFee;
+    }
+
+    public ArrayList<Transfer> getTransfers() {
+        return transfers;
     }
 }
