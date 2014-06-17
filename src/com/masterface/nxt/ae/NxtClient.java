@@ -40,7 +40,6 @@ public class NxtClient implements JsonProvider {
                 response = (JSONObject) JSONValue.parse(reader);
             }
         } catch (RuntimeException | IOException e) {
-            e.printStackTrace();
             throw new IllegalStateException(e);
         }
         if (isLogRequests && response != null) {

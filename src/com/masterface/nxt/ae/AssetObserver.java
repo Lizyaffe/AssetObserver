@@ -12,8 +12,10 @@ import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
 public class AssetObserver {
 
@@ -29,7 +31,6 @@ public class AssetObserver {
     public static Logger log;
 
     public static String NXT_BTC = "NXT_BTC";
-
     public static String BTC_USD = "BTC_USD";
     public static String NXT_USD = "NXT_USD";
     public static String NXT_CNY = "NXT_CNY";
@@ -39,10 +40,22 @@ public class AssetObserver {
     private long updateTime;
 
     static {
-        System.setProperty("java.util.logging.SimpleFormatter.format", "%1$tY-%1$tm-%1$td %1$tH:%1$tM:%1$tS %4$s %2$s %5$s%6$s%n");
-        log = Logger.getGlobal();
+        System.setProperty("java.util.logging.SimpleFormatter.format", "%1$tY-%1$tm-%1$td %1$tH:%1$tM:%1$tS %3$s %4$s %2$s %5$s %6$s%n");
+        log = Logger.getLogger(AssetObserver.class.getName());
         log.setLevel(Level.INFO);
-        log.fine("AssetObserver started");
+        try {
+            Path logs = Paths.get("logs");
+            if (!Files.exists(logs)) {
+                Files.createDirectory(logs);
+            }
+            FileHandler handler = new FileHandler("logs/server.log");
+            SimpleFormatter formatter = new SimpleFormatter();
+            handler.setFormatter(formatter);
+            handler.setLevel(Level.INFO);
+            log.addHandler(handler);
+        } catch (IOException e) {
+            log.log(Level.SEVERE, e.getMessage(), e);
+        }
         if (log.isLoggable(Level.INFO)) {
             log.info("Loading started");
         }
@@ -66,7 +79,7 @@ public class AssetObserver {
                     online.updateTime = System.currentTimeMillis();
                     serverWrapper.setAssetObserver(online);
                 } catch (Throwable t) {
-                    t.printStackTrace();
+                    log.log(Level.WARNING, t.getMessage(), t);
                 }
             }
         };
@@ -209,7 +222,8 @@ public class AssetObserver {
         }
         for (Asset asset : assets.values()) {
             if (asset.getNumberOfTrades() != assets.get(asset.getId()).getNumberOfTransfers()) {
-                throw new IllegalStateException(asset.toString());
+                log.info(String.format("Warning: inconsistent number of trades for asset %s trades %d actual %d",
+                        asset, asset.getNumberOfTrades(), assets.get(asset.getId()).getNumberOfTransfers()));
             }
         }
         if (log.isLoggable(Level.INFO)) {

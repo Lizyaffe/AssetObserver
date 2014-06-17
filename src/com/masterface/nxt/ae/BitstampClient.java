@@ -16,6 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.logging.Level;
 
 
 public class BitstampClient {
@@ -28,10 +29,10 @@ public class BitstampClient {
             HttpResponse httpResponse = client.execute(get);
 
             try (Reader reader = new BufferedReader(new InputStreamReader(httpResponse.getEntity().getContent()))) {
-                response = (JSONObject)JSONValue.parse(reader);
+                response = (JSONObject) JSONValue.parse(reader);
             }
         } catch (RuntimeException | IOException e) {
-            e.printStackTrace();
+            AssetObserver.log.log(Level.SEVERE, e.getMessage(), e);
             throw new IllegalStateException(e);
         }
         if (isLogRequests) {

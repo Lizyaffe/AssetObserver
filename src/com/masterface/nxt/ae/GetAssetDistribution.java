@@ -39,6 +39,8 @@ public class GetAssetDistribution extends APIRequestHandler {
         }
         List<AccountBalance> accountBalances = asset.getAccountBalancesList();
         Collections.sort(accountBalances, Collections.reverseOrder(new AccountQuantityComparator()));
+
+        // TODO somehow sort map according to quantity not according to account id
         Map<String, Object> map = new LinkedHashMap<>();
         double qty = 0;
         int count = 0;

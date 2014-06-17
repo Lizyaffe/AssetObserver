@@ -92,13 +92,23 @@ public class NxtApi {
                 String transactionId = (String) transactionObj;
                 JSONObject transaction = getTransaction(transactionId);
                 if (transaction == null) {
-                    AssetObserver.log.info("Can't get transaction for transactionId " + transactionId);
-                    break;
-                }
-                if ((Long) transaction.get("type") != 2) {
+                    AssetObserver.log.info("Can't get transaction for for transactionId " + transactionId);
                     continue;
                 }
-                if ((Long) transaction.get("subtype") == 0) {
+                Object type = transaction.get("type");
+                if (type == null) {
+                    AssetObserver.log.info("Can't get transaction type for transactionId " + transactionId);
+                    continue;
+                }
+                if ((Long) type != 2) {
+                    continue;
+                }
+                Object subtype = transaction.get("subtype");
+                if (subtype == null) {
+                    AssetObserver.log.info("Can't get transaction subtype for transactionId " + transactionId);
+                    continue;
+                }
+                if ((Long) subtype == 0) {
                     String assetId = (String) transaction.get("transaction");
                     //noinspection RedundantCast
                     Integer timeStamp = Integer.parseInt(((Long) transaction.get("timestamp")).toString());
@@ -106,7 +116,7 @@ public class NxtApi {
                     Tuple3<String, Integer, Long> assetInfo = new Tuple3<>(assetId, timeStamp, feeNQT);
                     assetCreation.add(assetInfo);
                 }
-                if ((Long) transaction.get("subtype") == 1) {
+                if ((Long) subtype == 1) {
                     JSONObject attachment = (JSONObject) transaction.get("attachment");
                     Transfer transfer = new Transfer((String) attachment.get("asset"), (Long) transaction.get("timestamp"),
                             Long.parseLong((String) attachment.get("quantityQNT")), blockId,

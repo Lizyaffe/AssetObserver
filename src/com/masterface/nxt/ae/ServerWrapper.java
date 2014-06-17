@@ -64,7 +64,7 @@ public class ServerWrapper {
     }
 
     private RequestLogHandler getRequestLogHandler() {
-        NCSARequestLog requestLog = new NCSARequestLog("access_yyyy_mm_dd.log");
+        NCSARequestLog requestLog = new NCSARequestLog("logs/access_yyyy_mm_dd.log");
         int days = 14;
         requestLog.setRetainDays(days);
         requestLog.setAppend(true);

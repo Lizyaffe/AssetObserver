@@ -17,7 +17,7 @@ public class PropertiesStorage {
     private static final Properties properties = new Properties(defaultProperties);
 
     static {
-        System.out.println("Initializing asset observer properties");
+        AssetObserver.log.info("Initializing asset observer properties");
         try (InputStream is = ClassLoader.getSystemResourceAsStream(ASSET_OBSERVER_DEFAULT_PROPERTIES)) {
             if (is != null) {
                 defaultProperties.load(is);
