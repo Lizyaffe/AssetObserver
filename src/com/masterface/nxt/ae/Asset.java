@@ -158,7 +158,7 @@ class Asset {
         List<AccountBalance> accountBalancesList = new ArrayList<>();
         accountBalancesList.addAll(accountBalancesMap.values());
         Collections.sort(accountBalancesList, new AccountBalanceComparator());
-        return Collections.unmodifiableList(accountBalancesList);
+        return accountBalancesList;
     }
 
     public Map<String, Object> getData(Map<String, Double> exchangeRates) {
