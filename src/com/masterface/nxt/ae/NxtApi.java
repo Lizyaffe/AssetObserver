@@ -66,8 +66,7 @@ public class NxtApi {
         return tradeList;
     }
 
-    public BlockchainData getAssetTransfers() {
-        String blockId = getLastBlockId();
+    public BlockchainData getAssetTransfers(String blockId) {
         List<Transfer> assetTransfers = new ArrayList<>();
         List<Tuple3> assetCreation = new ArrayList<>();
         while (true) {
@@ -132,11 +131,10 @@ public class NxtApi {
         return new BlockchainData(assetTransfers, assetCreation);
     }
 
-    public String getLastBlockId() {
+    public JSONObject getLastBlock() {
         Map<String, String> params = new HashMap<>();
         params.put("requestType", "getBlockchainStatus");
-        JSONObject response = jsonProvider.getJsonResponse(params);
-        return (String) response.get("lastBlock");
+        return jsonProvider.getJsonResponse(params);
     }
 
     public ArrayList<String> getLines() {

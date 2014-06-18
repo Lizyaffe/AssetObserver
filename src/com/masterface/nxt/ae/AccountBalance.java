@@ -5,7 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-class AccountBalance implements Comparable<AccountBalance> {
+class AccountBalance {
     private final String accountId;
     private final Asset asset;
     private long quantityQNT;
@@ -43,6 +43,9 @@ class AccountBalance implements Comparable<AccountBalance> {
     }
 
     public double getQuantity(int timeStamp) {
+        if (timeStamp == 0) {
+            return getQuantity();
+        }
         double quantity = 0;
         if (isIssuer()) {
             quantity += asset.getQuantity();
@@ -91,17 +94,6 @@ class AccountBalance implements Comparable<AccountBalance> {
         return (double) totalValue / totalQty;
     }
 
-    @Override
-    public int compareTo(@SuppressWarnings("NullableProblems") AccountBalance balance) {
-        if (getQuantity() > balance.getQuantity()) {
-            return -1;
-        }
-        if (getQuantity() < balance.getQuantity()) {
-            return 1;
-        }
-        return 0;
-    }
-
     public double getValue() {
         return getQuantity() * asset.getLastPrice();
     }
@@ -116,6 +108,8 @@ class AccountBalance implements Comparable<AccountBalance> {
 
     public Map<String, Object> getData(Map<String, Double> exchangeRates) {
         Map<String, Object> map = new LinkedHashMap<>();
+        map.put("accountId", accountId);
+        map.put("assetName", asset.getName());
         map.put("qty", String.format("%." + asset.getDecimals() + "f", getQuantity()));
         map.put("isIssuer", String.format("%b", isIssuer()));
         double nxtValue = getQuantity() * asset.getLastPrice();
@@ -126,16 +120,11 @@ class AccountBalance implements Comparable<AccountBalance> {
         map.put("sellQty", String.format("%." + asset.getDecimals() + "f", getQty(AccountTransfer.Type.OUTGOING, true)));
         map.put("receiveQty", String.format("%." + asset.getDecimals() + "f", getQty(AccountTransfer.Type.INCOMING, false)));
         map.put("sendQty", String.format("%." + asset.getDecimals() + "f", getQty(AccountTransfer.Type.OUTGOING, false)));
-        map.put("fees", String.format("%d", getFees()));
-        map.put("id", asset.getId());
         return map;
     }
 
-    public Map<String, Object> getDistributionData(int timeStamp, boolean ignoreIssuerAccount) {
+    public Map<String, Object> getDistributionData(int timeStamp) {
         Map<String, Object> map = new LinkedHashMap<>();
-        if (ignoreIssuerAccount && isIssuer()) {
-            return null;
-        }
         double quantity = getQuantity();
         if (timeStamp > 0) {
             quantity = getQuantity(timeStamp);
@@ -143,9 +132,8 @@ class AccountBalance implements Comparable<AccountBalance> {
         if (!isIssuer() && Math.abs(quantity) < 1 / (double) AssetObserver.MULTIPLIERS[(int) asset.getDecimals()] / 2) {
             return null;
         }
+        map.put("accountId", String.format("%s", accountId));
         map.put("qty", String.format("%." + asset.getDecimals() + "f", quantity));
-        double assetQuantity = ignoreIssuerAccount ? asset.getIssuedQuantity() : asset.getQuantity();
-        map.put("percent", String.format("%.2f", quantity / assetQuantity * 100));
         map.put("isIssuer", String.format("%b", isIssuer()));
         return map;
     }
@@ -160,9 +148,29 @@ class AccountBalance implements Comparable<AccountBalance> {
             if (transfer.isTrade() != isTrade) {
                 continue;
             }
-            volume += transfer.getQuantityQNT() / AssetObserver.MULTIPLIERS[((int) asset.getDecimals())];
+            volume += (double) transfer.getQuantityQNT() / AssetObserver.MULTIPLIERS[((int) asset.getDecimals())];
         }
         return volume;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        AccountBalance that = (AccountBalance) o;
+
+        if (!accountId.equals(that.accountId)) return false;
+        //noinspection RedundantIfStatement
+        if (!asset.equals(that.asset)) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = accountId.hashCode();
+        result = 31 * result + asset.hashCode();
+        return result;
+    }
 }

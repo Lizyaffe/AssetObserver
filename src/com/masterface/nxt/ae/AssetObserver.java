@@ -5,10 +5,7 @@ import org.json.simple.JSONObject;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -38,6 +35,7 @@ public class AssetObserver {
     private Map<String, Asset> assets;
     private Map<String, Double> exchangeRates = new HashMap<>();
     private long updateTime;
+    private long numberOfBlocks;
 
     static {
         System.setProperty("java.util.logging.SimpleFormatter.format", "%1$tY-%1$tm-%1$td %1$tH:%1$tM:%1$tS %3$s %4$s %2$s %5$s %6$s%n");
@@ -155,7 +153,10 @@ public class AssetObserver {
     }
 
     private void loadTransfers(NxtApi nxtAPi) {
-        BlockchainData blockchainData = nxtAPi.getAssetTransfers();
+        JSONObject lastBlock = nxtAPi.getLastBlock();
+        String lastBlockId = (String) lastBlock.get("lastBlock");
+        numberOfBlocks = (Long) lastBlock.get("numberOfBlocks");
+        BlockchainData blockchainData = nxtAPi.getAssetTransfers(lastBlockId);
         List<Transfer> assetTransfers = blockchainData.getAssetTransfers();
         for (Transfer transfer : assetTransfers) {
             assets.get(transfer.getAssetId()).addTransfer(transfer);
@@ -259,11 +260,8 @@ public class AssetObserver {
 
     public List<Asset> getAllAssets() {
         List<Asset> assetList = new ArrayList<>();
-        for (Asset asset : assets.values()) {
-            assetList.add(asset);
-
-        }
-        return assetList;
+        assetList.addAll(assets.values());
+        return Collections.unmodifiableList(assetList);
     }
 
     public Asset getAsset(String assetId) {
@@ -276,5 +274,9 @@ public class AssetObserver {
 
     public Map<String, Double> getExchangeRates() {
         return exchangeRates;
+    }
+
+    public long getNumberOfBlocks() {
+        return numberOfBlocks;
     }
 }

@@ -21,49 +21,45 @@ public class GetAccountBalance extends APIRequestHandler {
         } catch (RuntimeException e) {
             return generateErrorResponse("Invalid account id %s", accountIdParam);
         }
-        List<Asset> assetsList = assetObserver.getAllAssets();
-        Map<String, Map<String, Object>> map = new LinkedHashMap<>();
+        List<Asset> assetList = assetObserver.getAllAssets();
+        List<Map<String, Object>> accountAssetList = new ArrayList<>();
         double value = 0;
-        long fees = 0;
-        for (Asset asset : assetsList) {
+        for (Asset asset : assetList) {
             AccountBalance accountBalance = asset.getAccountBalance(accountId);
             if (accountBalance == null) {
                 // Account does not hold this asset
                 continue;
             }
             Map<String, Object> data = accountBalance.getData(assetObserver.getExchangeRates());
-            map.put(asset.getName(), data);
+            accountAssetList.add(data);
             value += Double.parseDouble((String) data.get("nxtValue"));
-            fees += Long.parseLong((String) data.get("fees"));
         }
+        Collections.sort(accountAssetList, Collections.reverseOrder(new AssetDataComparator()));
         List<Object> response = new ArrayList<>();
         Map<String, String> accountDetails = new LinkedHashMap<>();
         accountDetails.put("accountId", accountIdParam);
         accountDetails.put("nxtValue", String.format("%.2f", value));
         accountDetails.put("usdValue", String.format("%.2f", value * assetObserver.getExchangeRates().get(AssetObserver.NXT_USD)));
         accountDetails.put("btcValue", String.format("%.2f", value * assetObserver.getExchangeRates().get(AssetObserver.NXT_BTC)));
-        accountDetails.put("nxtFees", String.format("%d", fees));
         accountDetails.put("updateTime", String.format("%s", new Date(assetObserver.getUpdateTime())));
         response.add(accountDetails);
-        response.add(map);
+        response.add(accountAssetList);
         return JSONValue.toJSONString(response);
     }
 
-    @SuppressWarnings("UnusedDeclaration")
-    static class AccountBalanceComparator implements Comparator<Asset> {
+    private class AssetDataComparator implements Comparator<Map<String, Object>> {
 
         @Override
-        public int compare(Asset o1, Asset o2) {
-            double tradeVolume1 = o1.getTradeVolume();
-            double tradeVolume2 = o2.getTradeVolume();
-            if (tradeVolume1 < tradeVolume2) {
+        public int compare(Map<String, Object> o1, Map<String, Object> o2) {
+            double nxtValue1 = Double.parseDouble((String) o1.get("nxtValue"));
+            double nxtValue2 = Double.parseDouble((String) o2.get("nxtValue"));
+            if (nxtValue1 < nxtValue2) {
                 return -1;
             }
-            if (tradeVolume1 > tradeVolume2) {
+            if (nxtValue1 > nxtValue2) {
                 return 1;
             }
             return 0;
         }
     }
-
 }

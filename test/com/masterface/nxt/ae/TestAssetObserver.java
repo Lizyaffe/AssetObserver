@@ -13,13 +13,12 @@ import java.util.Map;
 
 public class TestAssetObserver {
 
-    AssetObserver assetObserver;
-    Map<String, Asset> assets;
-    private static double DELTA = 0.00000001;
     public static final String JSON_RESPONSE_JOURNAL = "JsonResponseJournal";
-
+    private static double DELTA = 0.00000001;
     @Rule
     public TestName testName = new TestName();
+    AssetObserver assetObserver;
+    Map<String, Asset> assets;
 
     @Before
     public void init() {
@@ -91,5 +90,4 @@ public class TestAssetObserver {
         Assert.assertEquals(17803.92, account2.getFifoPrice(), 0.01);
         Assert.assertEquals("12405492669314277647", account2.getAccountId());
     }
-
 }

@@ -16,7 +16,6 @@ class Asset {
     private final long numberOfTrades;
     private final ArrayList<Transfer> transfers;
     private final Map<String, AccountBalance> accountBalancesMap;
-    private final List<AccountBalance> accountBalancesList;
     private double lastPrice;
     private int creationTimeStamp;
     private long creationFee;
@@ -32,7 +31,6 @@ class Asset {
         this.numberOfTrades = (Long) assetJson.get("numberOfTrades");
         this.transfers = new ArrayList<>();
         this.accountBalancesMap = new HashMap<>();
-        this.accountBalancesList = new ArrayList<>();
     }
 
     public String getId() {
@@ -104,8 +102,6 @@ class Asset {
             }
             recipient.receive(transfer);
         }
-        accountBalancesList.addAll(accountBalancesMap.values());
-        Collections.sort(accountBalancesList);
     }
 
     @Override
@@ -158,45 +154,18 @@ class Asset {
         return accountBalancesMap.get(accountId);
     }
 
-    public double getIssuedQuantity() {
-        return getQuantity() - getIssuerAccount().getQuantity();
-    }
-
     public List<AccountBalance> getAccountBalancesList() {
-        return accountBalancesList;
-    }
-
-    @SuppressWarnings("UnusedDeclaration")
-    public List<DividendPayment> payDividend(long dividendAmount, Date date, boolean shouldPayIssuer, long threshold) {
-        int timeStamp = Utils.getTimeStamp(date);
-        double totalQuantity = 0;
-        for (AccountBalance balance : accountBalancesList) {
-            if (!shouldPayIssuer && balance.getAccountId().equals(balance.getAsset().getIssuerAccount().getAccountId())) {
-                continue;
-            }
-            totalQuantity += balance.getQuantity(timeStamp);
-        }
-        List<DividendPayment> payments = new ArrayList<>();
-        int carey = 0;
-        for (AccountBalance balance : accountBalancesList) {
-            if (!shouldPayIssuer && balance.getAccountId().equals(balance.getAsset().getIssuerAccount().getAccountId())) {
-                continue;
-            }
-            double payment = balance.getQuantity() / totalQuantity * dividendAmount;
-            if (payment >= threshold) {
-                payments.add(new DividendPayment(balance.getAccountId(), payment));
-            } else {
-                carey += payment;
-            }
-        }
-        // recursively pay dividend for the carey amount
-        return payments;
+        List<AccountBalance> accountBalancesList = new ArrayList<>();
+        accountBalancesList.addAll(accountBalancesMap.values());
+        Collections.sort(accountBalancesList, new AccountBalanceComparator());
+        return Collections.unmodifiableList(accountBalancesList);
     }
 
     public Map<String, Object> getData(Map<String, Double> exchangeRates) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("name", name);
         map.put("qty", String.format("%." + getDecimals() + "f", getQuantity()));
+        map.put("issuerAccount", String.format("%s", getIssuerAccount().getAccountId()));
         map.put("issuedQty", String.format("%." + getDecimals() + "f", getQuantity() - getIssuerAccount().getQuantity()));
         map.put("nxtPrice", String.format("%.2f", getLastPrice()));
         map.put("nxtValue", String.format("%d", getAssetValue()));
@@ -208,6 +177,7 @@ class Asset {
         map.put("creationTime", String.format("%s", Utils.fromEpochTime(creationTimeStamp)));
         map.put("creationFee", String.format("%d", creationFee / AssetObserver.NQT_IN_NXT));
         map.put("decimals", String.format("%d", decimals));
+        map.put("description", description);
         map.put("id", assetId);
         return map;
     }
@@ -233,5 +203,19 @@ class Asset {
 
     public ArrayList<Transfer> getTransfers() {
         return transfers;
+    }
+
+    static class AccountBalanceComparator implements Comparator<AccountBalance> {
+
+        @Override
+        public int compare(AccountBalance o1, AccountBalance o2) {
+            if (o1.getQuantity() > o2.getQuantity()) {
+                return -1;
+            }
+            if (o1.getQuantity() < o2.getQuantity()) {
+                return 1;
+            }
+            return 0;
+        }
     }
 }

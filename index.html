@@ -28,64 +28,15 @@
             request.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
             request.send(params);
             var result = JSON.stringify(JSON.parse(request.responseText), null, 4);
+            document.getElementById('request').textContent = document.location + url.substring(1) + '?' + params;
             form.getElementsByClassName("result")[0].textContent = result;
             return false;
-        }
-        function getAccountBalances(form) {
-            var accounts = form.elements["accounts"].value.split('\n');
-            var balance = 0;
-            var result = '<table><tr><th>account</th><th>balance</th></tr>';
-            for (i = 0; i < accounts.length; i++) {
-                account = accounts[i].trim();
-                if (account != '') {
-                    var accountBalance = getBalance(accounts[i]);
-                    result += '<tr><td>';
-                    result += account;
-                    result += ':</td><td>';
-                    result += formatAmount(accountBalance);
-                    result += '</td></tr>';
-                    balance += accountBalance;
-                }
-            }
-            result += '<tr><td>total:</td><td>';
-            result += formatAmount(balance);
-            result += '</td></tr></table>';
-            form.getElementsByClassName("result")[0].innerHTML = result;
-            return false;
-        }
-        function getBalance(account) {
-            var request = new XMLHttpRequest();
-            request.open("GET", '/nxt?requestType=getBalance&account=' + account, false);
-            request.send();
-            return parseInt(JSON.parse(request.responseText).balanceNQT);
-        }
-        function formatAmount(amount) {
-            var digits=[], formattedAmount = "", i;
-            var wholePart = Math.floor(amount / 100000000);
-            var fractionalPart = amount % 100000000;
-            do {
-                digits[digits.length] = wholePart % 10;
-                wholePart = Math.floor(wholePart / 10);
-            } while (wholePart > 0);
-            for (i = 0; i < digits.length; i++) {
-                if (i > 0 && i % 3 == 0) {
-                    formattedAmount = "'" + formattedAmount;
-                }
-                formattedAmount = digits[i] + formattedAmount;
-            }
-            if (fractionalPart != 0) {
-                formattedAmount += ".";
-                for (i = fractionalPart.length; i < 8; i++) {
-                    formattedAmount += "0";
-                }
-                formattedAmount += fractionalPart;
-            }
-            return formattedAmount;
         }
     </script>
 </head>
 <body>
 <h3>Extended Asset APIs</h3>
+<div id="request">[request url]</div><br>
 <b>Get Status:</b><br/>
 <form action="/api" method="POST" onsubmit="return submitForm(this);">
     <input type="hidden" name="requestType" value="getStatus"/>
@@ -123,9 +74,9 @@
     <div class="result"></div>
 </form>
 <hr>
-<b>Get Asset Distribution:</b><br/>
+<b>Dividend Simulation:</b><br/>
 <form action="/api" method="POST" onsubmit="return submitForm(this);">
-    <input type="hidden" name="requestType" value="getAssetDistribution"/>
+    <input type="hidden" name="requestType" value="dividendSimulation"/>
     <table>
         <tr>
             <td>Asset Id:</td>
@@ -138,6 +89,14 @@
         <tr>
             <td>Date [YYYYMMDD]:</td>
             <td><input type="text" name="balanceDate"/></td>
+        </tr>
+        <tr>
+            <td>Dividend Amount:</td>
+            <td><input type="text" name="dividendAmount"/></td>
+        </tr>
+        <tr>
+            <td>Threshold:</td>
+            <td><input type="text" name="threshold"/></td>
         </tr>
         <tr>
             <td colspan="2"><input type="submit" value="submit"/></td>
@@ -156,6 +115,21 @@
         <tr>
             <td>Type [transfer / trade]:</td>
             <td><input type="text" name="type"/></td>
+        </tr>
+        <tr>
+            <td colspan="2"><input type="submit" value="submit"/></td>
+        </tr>
+    </table>
+    <div class="result"></div>
+</form>
+<hr>
+<b>Get Asset Holders:</b><br/>
+<form action="/api" method="POST" onsubmit="return submitForm(this);">
+    <input type="hidden" name="requestType" value="getAssetHolders"/>
+    <table>
+        <tr>
+            <td>Asset Id:</td>
+            <td><input type="text" name="assetId"/></td>
         </tr>
         <tr>
             <td colspan="2"><input type="submit" value="submit"/></td>

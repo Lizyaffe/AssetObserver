@@ -12,18 +12,18 @@ public class GetAllAssets extends APIRequestHandler {
     @Override
     String processRequest(AssetObserver assetObserver, HttpServletRequest req) {
         List<Asset> assetsList = assetObserver.getAllAssets();
-        Collections.sort(assetsList, Collections.reverseOrder(new AssetNumOfTradesComparator()));
-        Map<String, Object> map = new LinkedHashMap<>();
+        List<Map<String, Object>> list = new ArrayList<>();
         int count = 0;
         long nofTrades = 0;
         double nxtVolume = 0;
         for (Asset asset : assetsList) {
             Map<String, Object> data = asset.getData(assetObserver.getExchangeRates());
-            map.put(asset.getName(), data);
+            list.add(data);
             count++;
             nofTrades += Long.parseLong((String) data.get("nofTrades"));
             nxtVolume += Double.parseDouble((String) data.get("nxtVolume"));
         }
+        Collections.sort(list, Collections.reverseOrder(new AssetTradeVolumeComparator()));
         List<Object> response = new ArrayList<>();
         Map<String, String> allAssets = new LinkedHashMap<>();
         allAssets.put("assetCount", String.format("%d", count));
@@ -33,16 +33,16 @@ public class GetAllAssets extends APIRequestHandler {
         allAssets.put("btcVolume", String.format("%.2f", nxtVolume * assetObserver.getExchangeRates().get(AssetObserver.NXT_BTC)));
         allAssets.put("updateTime", String.format("%s", new Date(assetObserver.getUpdateTime())));
         response.add(allAssets);
-        response.add(map);
+        response.add(list);
         return JSONValue.toJSONString(response);
     }
 
-    static class AssetNumOfTradesComparator implements Comparator<Asset> {
+    static class AssetTradeVolumeComparator implements Comparator<Map<String, Object>> {
 
         @Override
-        public int compare(Asset o1, Asset o2) {
-            double tradeVolume1 = o1.getTradeVolume();
-            double tradeVolume2 = o2.getTradeVolume();
+        public int compare(Map<String, Object> o1, Map<String, Object> o2) {
+            double tradeVolume1 = Double.parseDouble((String) o1.get("nxtVolume"));
+            double tradeVolume2 = Double.parseDouble((String) o2.get("nxtVolume"));
             if (tradeVolume1 < tradeVolume2) {
                 return -1;
             }

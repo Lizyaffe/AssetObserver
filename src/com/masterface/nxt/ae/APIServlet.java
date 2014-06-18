@@ -33,9 +33,10 @@ public class APIServlet extends HttpServlet {
         Map<String, APIRequestHandler> map = new HashMap<>();
         map.put("getAllAssets", GetAllAssets.instance);
         map.put("getAccountBalance", GetAccountBalance.instance);
-        map.put("getAssetDistribution", GetAssetDistribution.instance);
+        map.put("dividendSimulation", DividendSimulation.instance);
         map.put("getAssetMovements", GetAssetMovements.instance);
         map.put("getStatus", GetStatus.instance);
+        map.put("getAssetHolders", GetAssetHolders.instance);
         apiRequestHandlers = Collections.unmodifiableMap(map);
     }
 

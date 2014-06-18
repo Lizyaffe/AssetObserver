@@ -16,6 +16,7 @@ public class GetStatus extends APIRequestHandler {
     String processRequest(AssetObserver assetObserver, HttpServletRequest req) {
         Map<String, String> status = new LinkedHashMap<>();
         status.put("timeSinceUpdateSec", String.format("%d", (System.currentTimeMillis() - assetObserver.getUpdateTime()) / 1000));
+        status.put("numberOfBlocks", String.format("%s", assetObserver.getNumberOfBlocks()));
         status.put("nxtBtcRateBter", String.format("%.8f", assetObserver.getExchangeRates().get(AssetObserver.NXT_BTC)));
         status.put("btcUsdRateBitstamp", String.format("%.4f", assetObserver.getExchangeRates().get(AssetObserver.BTC_USD)));
         status.put("nxtUsdRateCalc", String.format("%.4f", assetObserver.getExchangeRates().get(AssetObserver.NXT_USD)));
