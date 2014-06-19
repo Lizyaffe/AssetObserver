@@ -110,12 +110,17 @@ class AccountBalance {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("accountId", accountId);
         map.put("assetName", asset.getName());
-        map.put("qty", String.format("%." + asset.getDecimals() + "f", getQuantity()));
         map.put("isIssuer", String.format("%b", isIssuer()));
-        double nxtValue = getQuantity() * asset.getLastPrice();
+        map.put("qty", String.format("%." + asset.getDecimals() + "f", getQuantity()));
+        double lastPrice = asset.getLastPrice();
+        map.put("price", String.format("%f", lastPrice));
+        double nxtValue = getQuantity() * lastPrice;
         map.put("nxtValue", String.format("%.2f", nxtValue));
         map.put("usdValue", String.format("%.2f", nxtValue * exchangeRates.get(AssetObserver.NXT_USD)));
         map.put("btcValue", String.format("%.2f", nxtValue * exchangeRates.get(AssetObserver.NXT_BTC)));
+        if (isIssuer()) {
+            map.put("issueQty", String.format("%." + asset.getDecimals() + "f", asset.getQuantity()));
+        }
         map.put("buyQty", String.format("%." + asset.getDecimals() + "f", getQty(AccountTransfer.Type.INCOMING, true)));
         map.put("sellQty", String.format("%." + asset.getDecimals() + "f", getQty(AccountTransfer.Type.OUTGOING, true)));
         map.put("receiveQty", String.format("%." + asset.getDecimals() + "f", getQty(AccountTransfer.Type.INCOMING, false)));

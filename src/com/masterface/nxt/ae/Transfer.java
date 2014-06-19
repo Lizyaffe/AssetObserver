@@ -24,7 +24,7 @@ class Transfer implements Comparable<Transfer> {
         return assetId;
     }
 
-    public Long getTimestamp() {
+    public long getTimestamp() {
         return timestamp;
     }
 

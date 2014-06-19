@@ -46,7 +46,7 @@ class Trade extends Transfer {
     @Override
     public Map<String, Object> getData(Asset asset) {
         Map<String, Object> map = super.getData(asset);
-        double price = (double) getPriceNQT() / AssetObserver.NQT_IN_NXT;
+        double price = (double) getPriceNQT() / AssetObserver.NQT_IN_NXT * (double) AssetObserver.MULTIPLIERS[(int) asset.getDecimals()];
         map.put("price", String.format("%.8f", price));
         double qty = getQuantityQNT() / (double) AssetObserver.MULTIPLIERS[(int) asset.getDecimals()];
         double nxtValue = qty * price;

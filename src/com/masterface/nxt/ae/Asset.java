@@ -5,6 +5,7 @@ import org.json.simple.JSONObject;
 import java.util.*;
 
 class Asset {
+    public static final int DAY = 24 * 60 * 60;
     private final String assetId;
     private final String accountId;
     @SuppressWarnings({"FieldCanBeLocal", "UnusedDeclaration"})
@@ -171,9 +172,12 @@ class Asset {
         map.put("nxtValue", String.format("%d", getAssetValue()));
         map.put("usdValue", String.format("%.2f", getAssetValue() * exchangeRates.get(AssetObserver.NXT_USD)));
         map.put("nofTrades", String.format("%d", getNumberOfTrades()));
-        double tradeVolume = getTradeVolume();
-        map.put("nxtVolume", String.format("%d", Math.round(tradeVolume)));
-        map.put("usdVolume", String.format("%d", Math.round(tradeVolume * exchangeRates.get(AssetObserver.NXT_USD))));
+        double[] tradeVolume = getTradeVolume();
+        map.put("nxtVolume24h", String.format("%d", Math.round(tradeVolume[0])));
+        map.put("usdVolume24h", String.format("%d", Math.round(tradeVolume[0] * exchangeRates.get(AssetObserver.NXT_USD))));
+        map.put("nxtVolume7d", String.format("%d", Math.round(tradeVolume[1])));
+        map.put("nxtVolume30d", String.format("%d", Math.round(tradeVolume[2])));
+        map.put("nxtVolumeAll", String.format("%d", Math.round(tradeVolume[3])));
         map.put("creationTime", String.format("%s", Utils.fromEpochTime(creationTimeStamp)));
         map.put("creationFee", String.format("%d", creationFee / AssetObserver.NQT_IN_NXT));
         map.put("decimals", String.format("%d", decimals));
@@ -182,15 +186,30 @@ class Asset {
         return map;
     }
 
-    public double getTradeVolume() {
+    public double[] getTradeVolume() {
         double volume = 0;
+        double volume24h = 0;
+        double volume7d = 0;
+        double volume30d = 0;
+        int now = Utils.getEpochTime(System.currentTimeMillis());
         for (Transfer transfer : transfers) {
             if (!transfer.isTrade()) {
                 continue;
             }
-            volume += transfer.getQuantityQNT() * ((Trade) transfer).getPriceNQT() / AssetObserver.NQT_IN_NXT;
+            long value = transfer.getQuantityQNT() * ((Trade) transfer).getPriceNQT() / AssetObserver.NQT_IN_NXT;
+            volume += value;
+            if (transfer.getTimestamp() + DAY > now) {
+                volume24h += value;
+            }
+            if (transfer.getTimestamp() + 7 * DAY > now) {
+                volume7d += value;
+            }
+            if (transfer.getTimestamp() + 30 * DAY > now) {
+                volume30d += value;
+            }
         }
-        return volume;
+
+        return new double[]{volume24h, volume7d, volume30d, volume};
     }
 
     public void setTimeStamp(Integer timeStamp) {
