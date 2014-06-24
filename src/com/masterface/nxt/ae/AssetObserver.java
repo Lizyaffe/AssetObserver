@@ -159,7 +159,10 @@ public class AssetObserver {
         BlockchainData blockchainData = nxtAPi.getAssetTransfers(lastBlockId);
         List<Transfer> assetTransfers = blockchainData.getAssetTransfers();
         for (Transfer transfer : assetTransfers) {
-            assets.get(transfer.getAssetId()).addTransfer(transfer);
+            Asset asset = assets.get(transfer.getAssetId());
+            if (asset != null) {
+                asset.addTransfer(transfer);
+            }
         }
         List<Tuple3> assetCreation = blockchainData.getAssetCreation();
         for (Tuple3 assetExtraData : assetCreation) {
