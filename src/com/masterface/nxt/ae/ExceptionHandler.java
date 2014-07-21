@@ -7,6 +7,7 @@ public class ExceptionHandler implements Thread.UncaughtExceptionHandler {
 
     @Override
     public void uncaughtException(Thread t, Throwable e) {
+        e.printStackTrace();
         AssetObserver.log.log(Level.SEVERE, e.getMessage(), e);
     }
 }

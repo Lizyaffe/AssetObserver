@@ -68,7 +68,7 @@ public class NxtApi {
 
     public BlockchainData getAssetTransfers(String blockId) {
         List<Transfer> assetTransfers = new ArrayList<>();
-        List<Tuple3> assetCreation = new ArrayList<>();
+        List<AssetCreation> assetCreations = new ArrayList<>();
         while (true) {
             JSONObject block = getBlock(blockId);
             if (block == null) {
@@ -112,8 +112,8 @@ public class NxtApi {
                     //noinspection RedundantCast
                     Integer timeStamp = Integer.parseInt(((Long) transaction.get("timestamp")).toString());
                     long feeNQT = Long.parseLong((String) transaction.get("feeNQT"));
-                    Tuple3<String, Integer, Long> assetInfo = new Tuple3<>(assetId, timeStamp, feeNQT);
-                    assetCreation.add(assetInfo);
+                    AssetCreation assetCreation = new AssetCreation(assetId, timeStamp, feeNQT);
+                    assetCreations.add(assetCreation);
                 }
                 if ((Long) subtype == 1) {
                     JSONObject attachment = (JSONObject) transaction.get("attachment");
@@ -128,7 +128,7 @@ public class NxtApi {
             }
             blockId = (String) block.get("previousBlock");
         }
-        return new BlockchainData(assetTransfers, assetCreation);
+        return new BlockchainData(assetTransfers, assetCreations);
     }
 
     public JSONObject getLastBlock() {

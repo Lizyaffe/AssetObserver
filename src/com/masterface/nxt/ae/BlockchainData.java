@@ -4,9 +4,9 @@ import java.util.List;
 
 class BlockchainData {
     List<Transfer> assetTransfers;
-    List<Tuple3> assetCreation;
+    List<AssetCreation> assetCreation;
 
-    BlockchainData(List<Transfer> assetTransfers, List<Tuple3> assetCreation) {
+    BlockchainData(List<Transfer> assetTransfers, List<AssetCreation> assetCreation) {
         this.assetTransfers = assetTransfers;
         this.assetCreation = assetCreation;
     }
@@ -15,7 +15,7 @@ class BlockchainData {
         return assetTransfers;
     }
 
-    public List<Tuple3> getAssetCreation() {
+    public List<AssetCreation> getAssetCreation() {
         return assetCreation;
     }
 }

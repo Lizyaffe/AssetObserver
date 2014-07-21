@@ -36,6 +36,7 @@ public class AssetObserver {
     private Map<String, Double> exchangeRates = new HashMap<>();
     private long updateTime;
     private long numberOfBlocks;
+    private int timeStamp = -1;
 
     static {
         System.setProperty("java.util.logging.SimpleFormatter.format", "%1$tY-%1$tm-%1$td %1$tH:%1$tM:%1$tS %3$s %4$s %2$s %5$s %6$s%n");
@@ -67,18 +68,15 @@ public class AssetObserver {
         assetObserver.updateExchangeRates();
         final JsonProvider jsonProvider = JsonProviderFactory.getJsonProvider(null);
         final ServerWrapper serverWrapper = new ServerWrapper();
-        Runnable r = new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    AssetObserver online = new AssetObserver();
-                    online.load(jsonProvider);
-                    online.updateExchangeRates();
-                    online.updateTime = System.currentTimeMillis();
-                    serverWrapper.setAssetObserver(online);
-                } catch (Throwable t) {
-                    log.log(Level.WARNING, t.getMessage(), t);
-                }
+        Runnable r = () -> {
+            try {
+                AssetObserver online = new AssetObserver();
+                online.load(jsonProvider);
+                online.updateExchangeRates();
+                online.updateTime = System.currentTimeMillis();
+                serverWrapper.setAssetObserver(online);
+            } catch (Throwable t) {
+                log.log(Level.WARNING, t.getMessage(), t);
             }
         };
         ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
@@ -164,11 +162,11 @@ public class AssetObserver {
                 asset.addTransfer(transfer);
             }
         }
-        List<Tuple3> assetCreation = blockchainData.getAssetCreation();
-        for (Tuple3 assetExtraData : assetCreation) {
-            @SuppressWarnings("RedundantCast") Asset asset = assets.get((String) assetExtraData.x);
-            asset.setTimeStamp((Integer) assetExtraData.y);
-            asset.setCreationFee((Long) assetExtraData.z);
+        List<AssetCreation> assetCreations = blockchainData.getAssetCreation();
+        for (AssetCreation assetCreation : assetCreations) {
+            Asset asset = assets.get(assetCreation.getAssetId());
+            asset.setTimeStamp(assetCreation.getTimeStamp());
+            asset.setCreationFee(assetCreation.getFeeNqt());
         }
         if (log.isLoggable(Level.INFO)) {
             log.info("Transfer loading done");
@@ -272,7 +270,14 @@ public class AssetObserver {
     }
 
     public long getUpdateTime() {
+        if (timeStamp != -1) {
+            return Utils.getTimeMillis(timeStamp);
+        }
         return updateTime;
+    }
+
+    public void addExchangeRate(String type, double rate) {
+        exchangeRates.put(type, rate);
     }
 
     public Map<String, Double> getExchangeRates() {
@@ -281,5 +286,16 @@ public class AssetObserver {
 
     public long getNumberOfBlocks() {
         return numberOfBlocks;
+    }
+
+    public int getTimeStamp() {
+        if (timeStamp == -1) {
+            return Utils.getEpochTime(System.currentTimeMillis());
+        }
+        return timeStamp;
+    }
+
+    public void setTimeStamp(int timeStamp) {
+        this.timeStamp = timeStamp;
     }
 }

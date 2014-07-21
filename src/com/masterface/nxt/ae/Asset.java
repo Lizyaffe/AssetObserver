@@ -15,7 +15,7 @@ class Asset {
     private final long quantityQNT;
     private final long decimals;
     private final long numberOfTrades;
-    private final ArrayList<Transfer> transfers;
+    private final List<Transfer> transfers;
     private final Map<String, AccountBalance> accountBalancesMap;
     private double lastPrice;
     private int creationTimeStamp;
@@ -162,7 +162,7 @@ class Asset {
         return accountBalancesList;
     }
 
-    public Map<String, Object> getData(Map<String, Double> exchangeRates) {
+    public Map<String, Object> getData(Map<String, Double> exchangeRates, int timeStamp) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("name", name);
         map.put("qty", String.format("%." + getDecimals() + "f", getQuantity()));
@@ -172,13 +172,13 @@ class Asset {
         map.put("nxtValue", String.format("%d", getAssetValue()));
         map.put("usdValue", String.format("%.2f", getAssetValue() * exchangeRates.get(AssetObserver.NXT_USD)));
         map.put("nofTrades", String.format("%d", getNumberOfTrades()));
-        double[] tradeVolume = getTradeVolume();
+        double[] tradeVolume = getTradeVolume(timeStamp);
         map.put("nxtVolume24h", String.format("%d", Math.round(tradeVolume[0])));
         map.put("usdVolume24h", String.format("%d", Math.round(tradeVolume[0] * exchangeRates.get(AssetObserver.NXT_USD))));
         map.put("nxtVolume7d", String.format("%d", Math.round(tradeVolume[1])));
         map.put("nxtVolume30d", String.format("%d", Math.round(tradeVolume[2])));
         map.put("nxtVolumeAll", String.format("%d", Math.round(tradeVolume[3])));
-        map.put("creationTime", String.format("%s", Utils.fromEpochTime(creationTimeStamp)));
+        map.put("creationTime", String.format("%s", Utils.getDate(creationTimeStamp)));
         map.put("creationFee", String.format("%d", creationFee / AssetObserver.NQT_IN_NXT));
         map.put("decimals", String.format("%d", decimals));
         map.put("description", description);
@@ -186,30 +186,13 @@ class Asset {
         return map;
     }
 
-    public double[] getTradeVolume() {
-        double volume = 0;
-        double volume24h = 0;
-        double volume7d = 0;
-        double volume30d = 0;
-        int now = Utils.getEpochTime(System.currentTimeMillis());
-        for (Transfer transfer : transfers) {
-            if (!transfer.isTrade()) {
-                continue;
-            }
-            long value = transfer.getQuantityQNT() * ((Trade) transfer).getPriceNQT() / AssetObserver.NQT_IN_NXT;
-            volume += value;
-            if (transfer.getTimestamp() + DAY > now) {
-                volume24h += value;
-            }
-            if (transfer.getTimestamp() + 7 * DAY > now) {
-                volume7d += value;
-            }
-            if (transfer.getTimestamp() + 30 * DAY > now) {
-                volume30d += value;
-            }
-        }
+    public double[] getTradeVolume(int timeStamp) {
 
-        return new double[]{volume24h, volume7d, volume30d, volume};
+        TradeVolume tradeVolume = transfers.parallelStream().collect(
+                () -> new TradeVolume(timeStamp),
+                TradeVolume::accept,
+                TradeVolume::combine);
+        return tradeVolume.getVolume();
     }
 
     public void setTimeStamp(Integer timeStamp) {
@@ -220,8 +203,52 @@ class Asset {
         this.creationFee = creationFee;
     }
 
-    public ArrayList<Transfer> getTransfers() {
+    public List<Transfer> getTransfers() {
         return transfers;
+    }
+
+    static class TradeVolume {
+
+        private int timeStamp;
+        private double[] volume = new double[4];
+
+        TradeVolume(int timeStamp) {
+            this.timeStamp = timeStamp;
+        }
+
+        // @Override
+        public void accept(Transfer transfer) {
+            if (!transfer.isTrade()) {
+                return;
+            }
+            Trade trade = (Trade) transfer;
+            long tradeTime = trade.getTimestamp();
+            double tradeVolume = trade.getVolume();
+            volume[3] += tradeVolume;
+            if (!(tradeTime + 30 * DAY > timeStamp)) {
+                return;
+            }
+            volume[2] += tradeVolume;
+            if (!(tradeTime + 7 * DAY > timeStamp)) {
+                return;
+            }
+            volume[1] += tradeVolume;
+            if (!(tradeTime + DAY > timeStamp)) {
+                return;
+            }
+            volume[0] += tradeVolume;
+        }
+
+        public void combine(TradeVolume tradeVolume) {
+            volume[0] += tradeVolume.volume[0];
+            volume[1] += tradeVolume.volume[1];
+            volume[2] += tradeVolume.volume[2];
+            volume[3] += tradeVolume.volume[3];
+        }
+
+        public double[] getVolume() {
+            return volume;
+        }
     }
 
     static class AccountBalanceComparator implements Comparator<AccountBalance> {

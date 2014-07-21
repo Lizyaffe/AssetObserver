@@ -1,37 +1,13 @@
 package com.masterface.nxt.ae;
 
 import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TestName;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
-import java.util.Map;
 
-public class TestAssetObserver {
+public class TestAssetObserver extends TestResourceLoader {
 
-    public static final String JSON_RESPONSE_JOURNAL = "JsonResponseJournal";
     private static double DELTA = 0.00000001;
-    @Rule
-    public TestName testName = new TestName();
-    AssetObserver assetObserver;
-    Map<String, Asset> assets;
-
-    @Before
-    public void init() {
-        assetObserver = new AssetObserver();
-
-        String methodName = testName.getMethodName();
-        if (methodName.equals("getNemTopHolders")) {
-            methodName = "getNemValue";
-        }
-        Path testResource = Paths.get("test.resources/" + JSON_RESPONSE_JOURNAL + "." + methodName + ".log");
-        JsonProvider jsonProvider = JsonProviderFactory.getJsonProvider(testResource);
-        assets = assetObserver.load(jsonProvider);
-    }
 
     @Test
     public void getMyBalance1() {
@@ -74,7 +50,7 @@ public class TestAssetObserver {
     }
 
     @Test
-    public void getNemTopHolders() {
+    public void getNemValue_topHolders() {
         Asset nemStake = assets.get("12465186738101000735");
         AccountBalance issuerAccount = nemStake.getIssuerAccount();
         Assert.assertEquals(612.0, issuerAccount.getQuantity(), 0.1);

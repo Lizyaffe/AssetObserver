@@ -53,4 +53,8 @@ class Trade extends Transfer {
         map.put("nxtValue", String.format("%.2f", nxtValue));
         return map;
     }
+
+    public long getVolume() {
+        return getQuantityQNT() * getPriceNQT() / AssetObserver.NQT_IN_NXT;
+    }
 }

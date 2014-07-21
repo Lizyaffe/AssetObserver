@@ -86,7 +86,7 @@ class Transfer implements Comparable<Transfer> {
         double qty = quantityQNT / (double) AssetObserver.MULTIPLIERS[(int) asset.getDecimals()];
         map.put("qty", String.format("%." + asset.getDecimals() + "f", qty));
         map.put("timeStamp", String.format("%d", timestamp));
-        map.put("date", String.format("%s", Utils.fromEpochTime((int) (long) timestamp)));
+        map.put("date", String.format("%s", Utils.getDate((int) (long) timestamp)));
         map.put("sender", String.format("%s", senderAccount));
         map.put("recipient", String.format("%s", recipientAccount));
         return map;

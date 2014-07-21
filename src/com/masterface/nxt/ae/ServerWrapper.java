@@ -26,15 +26,13 @@ public class ServerWrapper {
         apiServer.setHandler(apiHandlers);
         apiServer.setStopAtShutdown(true);
 
-        Runnable r = new Runnable() {
-            public void run() {
-                try {
-                    apiServer.start();
-                    AssetObserver.log.info("API server started listening on " + host + ":" + port);
-                } catch (Exception e) {
-                    AssetObserver.log.info("Failed to start API server");
-                    throw new RuntimeException(e.toString(), e);
-                }
+        Runnable r = () -> {
+            try {
+                apiServer.start();
+                AssetObserver.log.info("API server started listening on " + host + ":" + port);
+            } catch (Exception e) {
+                AssetObserver.log.info("Failed to start API server");
+                throw new RuntimeException(e.toString(), e);
             }
         };
         new Thread(r).start();
@@ -54,7 +52,7 @@ public class ServerWrapper {
         ServletContextHandler defaultContext = new ServletContextHandler(contexts, "/", ServletContextHandler.SESSIONS);
         ServletHolder defaultServletHolder = new ServletHolder(new DefaultServlet());
         defaultServletHolder.setInitParameter("dirAllowed", "false");
-        defaultServletHolder.setInitParameter("resourceBase", ".");
+        defaultServletHolder.setInitParameter("resourceBase", "./web");
         defaultContext.addServlet(defaultServletHolder, "/*");
         contexts.addHandler(defaultContext);
 
