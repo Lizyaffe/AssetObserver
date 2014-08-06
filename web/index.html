@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<!--suppress HtmlUnknownTarget -->
+<html>
+<head>
+    <meta charset="UTF-8"/>
+    <title>Asset Spy</title>
+    <link type="text/css" href="asset.css" rel="stylesheet"/>
+    <script type="text/javascript" src="asset.js"></script>
+</head>
+<body>
+<h3>Extended Asset APIs</h3>
+<div id="request">[request url]</div><br>
+<b>Get Status:</b><br/>
+<form method="POST" onsubmit="return asset.submitForm(this);">
+    <input type="hidden" name="requestType" value="getStatus"/>
+    <table>
+        <tr>
+            <td colspan="2"><input type="submit" value="submit"/></td>
+        </tr>
+    </table>
+    <div class="result"></div>
+</form>
+<hr>
+<b>Get All Assets:</b><br/>
+<form method="POST" onsubmit="return asset.submitForm(this);">
+    <input type="hidden" name="requestType" value="getAllAssets"/>
+    <table>
+        <tr>
+            <td><label>Sort order
+                <input type="text" name="sortOrder"/>
+            </label></td>
+            <td>
+        </tr>
+        <tr>
+            <td colspan="2"><input type="submit" value="submit"/></td>
+        </tr>
+    </table>
+    <div class="result"></div>
+</form>
+<hr>
+<b>Get Account Balance:</b><br/>
+<form method="POST" onsubmit="return asset.submitForm(this);">
+    <input type="hidden" name="requestType" value="getAccountBalance"/>
+    <table>
+        <tr>
+            <td><label>Account Id (numeric or NXT)
+                <input type="text" name="accountId"/>
+            </label></td>
+        </tr>
+        <tr>
+            <td colspan="2"><input type="submit" value="submit"/></td>
+        </tr>
+    </table>
+    <div class="result"></div>
+</form>
+<hr>
+<b>Dividend Simulation:</b><br/>
+<form method="POST" onsubmit="return asset.submitForm(this);">
+    <input type="hidden" name="requestType" value="dividendSimulation"/>
+    <table>
+        <tr>
+            <td><label>Asset Id
+                <input type="text" name="assetId"/>
+            </label></td>
+        </tr>
+        <tr>
+            <td><label>Ignore Issuer Account<input type="text" name="ignoreIssuerAccount"/>[true/false[false]]</label></td>
+        </tr>
+        <tr>
+            <td><label>Date<input type="text" name="balanceDate"/>[YYYYMMDD]</label></td>
+        </tr>
+        <tr>
+            <td><label>Dividend Amount<input type="text" name="dividendAmount"/>NXT</label></td>
+        </tr>
+        <tr>
+            <td><label>Threshold<input type="text" name="threshold"/>NXT</label></td>
+        </tr>
+        <tr>
+            <td colspan="2"><input type="submit" value="submit"/></td>
+        </tr>
+    </table>
+    <div class="result"></div>
+</form>
+<b>Get Asset Movements:</b><br/>
+<form method="POST" onsubmit="return asset.submitForm(this);">
+    <input type="hidden" name="requestType" value="getAssetMovements"/>
+    <table>
+        <tr>
+            <td><label>Asset Id
+                <input type="text" name="assetId"/>
+            </label></td>
+        </tr>
+        <tr>
+            <td><label>Type<input type="text" name="type"/>[transfer / trade]</label></td>
+        </tr>
+        <tr>
+            <td colspan="2"><input type="submit" value="submit"/></td>
+        </tr>
+    </table>
+    <div class="result"></div>
+</form>
+<hr>
+<b>Get Asset Holders:</b><br/>
+<form method="POST" onsubmit="return asset.submitForm(this);">
+    <input type="hidden" name="requestType" value="getAssetHolders"/>
+    <table>
+        <tr>
+            <td><label>Asset Id
+                <input type="text" name="assetId"/>
+            </label></td>
+        </tr>
+        <tr>
+            <td colspan="2"><input type="submit" value="submit"/></td>
+        </tr>
+    </table>
+    <div class="result"></div>
+</form>
+<hr>
+<div>Version 0.2 updated June 29th, 2014</div>
+</body>
+</html>
