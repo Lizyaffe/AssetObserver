@@ -12,11 +12,15 @@ public class GetAllAssets extends APIRequestHandler {
 
     @Override
     String processRequest(AssetObserver assetObserver, HttpServletRequest req) {
+        String sortOrder = req.getParameter("sortOrder");
+        if (sortOrder == null || sortOrder.equals("")) {
+            sortOrder = "-nxtVolume24h";
+        }
         List<Asset> assetsList = assetObserver.getAllAssets();
         int timeStamp = assetObserver.getTimeStamp();
         List<Map<String, Object>> list = assetsList.stream().
                 map(asset -> asset.getData(assetObserver.getExchangeRates(), timeStamp)).
-                sorted(new ConfigurableComparator("-nxtVolume24h")).
+                sorted(new ConfigurableComparator(sortOrder)).
                 collect(Collectors.toList());
         long count = list.stream().count();
         long nofTrades = list.stream().mapToLong(data -> Long.parseLong((String) data.get("nofTrades"))).sum();

@@ -119,7 +119,7 @@ public class NxtApi {
                     JSONObject attachment = (JSONObject) transaction.get("attachment");
                     Transfer transfer = new Transfer((String) attachment.get("asset"), (Long) transaction.get("timestamp"),
                             Long.parseLong((String) attachment.get("quantityQNT")), blockId,
-                            (String) transaction.get("sender"), (String) transaction.get("recipient"));
+                            (String) transaction.get("sender"), (String) transaction.get("recipient"), (String) attachment.get("comment"));
                     if (AssetObserver.log.isLoggable(Level.FINE)) {
                         AssetObserver.log.info("Transfer:" + transfer);
                     }

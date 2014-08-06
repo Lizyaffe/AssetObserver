@@ -8,16 +8,21 @@ class Transfer implements Comparable<Transfer> {
     private final Long timestamp;
     private final Long quantityQNT;
     private final String block;
+    private final String comment;
     private String senderAccount;
     private String recipientAccount;
 
-    Transfer(String assetId, Long timestamp, Long quantityQNT, String block, String senderAccount, String recipientAccount) {
+    Transfer(String assetId, Long timestamp, Long quantityQNT, String block, String senderAccount, String recipientAccount, String comment) {
         this.assetId = assetId;
         this.timestamp = timestamp;
         this.quantityQNT = quantityQNT;
         this.block = block;
         this.senderAccount = senderAccount;
         this.recipientAccount = recipientAccount;
+        this.comment = comment;
+        if (comment != null && !comment.equals("")) {
+            AssetObserver.log.info("Transfer comment: " + comment);
+        }
     }
 
     public String getAssetId() {
@@ -89,6 +94,7 @@ class Transfer implements Comparable<Transfer> {
         map.put("date", String.format("%s", Utils.getDate((int) (long) timestamp)));
         map.put("sender", String.format("%s", senderAccount));
         map.put("recipient", String.format("%s", recipientAccount));
+        map.put("comment", String.format("%s", comment));
         return map;
     }
 }

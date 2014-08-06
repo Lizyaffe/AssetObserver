@@ -12,8 +12,10 @@
 		<copy todir="dist/conf">
             <fileset dir="conf"/>
 		</copy>
+		<copy todir="dist/web">
+            <fileset dir="web" includes="index.html,asset.css,asset.js,jquery-2.1.1.js"/>
+		</copy>
         <copy file="app.jar" todir="dist"/>
-        <copy file="index.html" todir="dist"/>
         <copy file="run.bat" todir="dist"/>
         <copy file="run.sh" todir="dist"/>
         <zip destfile="package.zip" basedir="dist"/>

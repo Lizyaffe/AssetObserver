@@ -11,7 +11,7 @@ class Trade extends Transfer {
 
     Trade(JSONObject assetJson) {
         super((String) assetJson.get("asset"), (Long) assetJson.get("timestamp"), Long.parseLong((String) assetJson.get("quantityQNT")),
-                (String) assetJson.get("block"), null, null);
+                (String) assetJson.get("block"), null, null, null);
         this.priceNQT = Long.parseLong((String) assetJson.get("priceNQT"));
         this.askOrder = (String) assetJson.get("askOrder");
         this.bidOrder = (String) assetJson.get("bidOrder");

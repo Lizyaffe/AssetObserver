@@ -179,6 +179,7 @@ class Asset {
         map.put("nxtVolume30d", String.format("%d", Math.round(tradeVolume[2])));
         map.put("nxtVolumeAll", String.format("%d", Math.round(tradeVolume[3])));
         map.put("creationTime", String.format("%s", Utils.getDate(creationTimeStamp)));
+        map.put("creationTimeStamp", String.format("%s", creationTimeStamp));
         map.put("creationFee", String.format("%d", creationFee / AssetObserver.NQT_IN_NXT));
         map.put("decimals", String.format("%d", decimals));
         map.put("description", description);
